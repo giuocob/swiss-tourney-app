@@ -1,26 +1,29 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <global-modal v-bind="globalModalState"></global-modal>
+  <div class="container w-100">
+    <div class="row">
+      <div class="col-lg-12">
+        <h1 class="text-center">My first beautiful page!!!</h1>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-lg-12">
+      <router-view></router-view>
+    </div>
+  </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import { GlobalModal } from './components';
 
 export default {
   name: 'App',
-  components: {
-    HelloWorld
-  }
+  computed: {
+    globalModalState() {
+      return this.$store.state.globalModal;
+    }
+  },
+  components: { GlobalModal }
 }
 </script>
-
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-</style>
