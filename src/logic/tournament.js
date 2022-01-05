@@ -19,7 +19,7 @@ function vuexConfig(appContext) {
 			},
 			createNewTournament: function({ commit }) {
 				let tState = {
-					lifecycle: 'setup',
+					lifecycle: 'setup-player-entry',
 					players: [],
 					rounds: []
 				};

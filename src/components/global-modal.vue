@@ -73,7 +73,7 @@ export default {
 			this.bmIsShown = false;
 			this.$store.commit('hideGlobalModal');
 		},
-		handleSubmit() {
+		async handleSubmit() {
 			if (!this.submitAction) {
 				this.close();
 				return;
@@ -86,7 +86,7 @@ export default {
 					// Remove fade to make modal pop out immediately
 					this.getModalDiv().classList.remove('fade');
 				} else if (actionObj.type === 'dispatchAction') {
-					this.$store.dispatch(actionObj.action, actionObj.payload);
+					await this.$store.dispatch(actionObj.action, actionObj.payload);
 				} else if (actionObj.type === 'close') {
 					// Do nothing special
 				} else {
