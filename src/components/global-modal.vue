@@ -37,7 +37,9 @@ export default {
 		message: {
 			type: String
 		},
-		submitAction: Object
+		submitAction: {
+			type: [ Object, Array ]
+		}
 	},
 	mounted() {
 		let md = this.getModalDiv();
@@ -72,15 +74,26 @@ export default {
 			this.$store.commit('hideGlobalModal');
 		},
 		handleSubmit() {
-			let action = this.submitAction && this.submitAction.action;
-			if (action === 'redirect') {
-				this.$router.push(this.submitAction.link);
-				// Remove fade to make modal pop out immediately
-				this.getModalDiv().classList.remove('fade');
+			if (!this.submitAction) {
 				this.close();
-			} else {
-				this.close();
+				return;
 			}
+			let sa = JSON.parse(JSON.stringify(this.submitAction));  // TODO: is there a better way to do this?
+			let actions = (Array.isArray(sa)) ? sa : [ sa ];
+			for (let actionObj of actions) {
+				if (actionObj.type === 'redirect') {
+					this.$router.push(actionObj.link);
+					// Remove fade to make modal pop out immediately
+					this.getModalDiv().classList.remove('fade');
+				} else if (actionObj.type === 'dispatchAction') {
+					this.$store.dispatch(actionObj.action, actionObj.payload);
+				} else if (actionObj.type === 'close') {
+					// Do nothing special
+				} else {
+					console.error('Invalid modal action type: ' + actionObj.type);
+				}
+			}
+			this.close();
 		}
 	}
 };
