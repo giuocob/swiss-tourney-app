@@ -22,12 +22,18 @@ export default {
 		};
 	},
 	created() {
-		checkRedirect(this, { tStateLifecycle: 'setup-options' });
+		checkRedirect(this, {
+			tStateReqs: { lifecycle: 'setup-options' }
+		});
 		this.maxRounds = this.$store.state.activeTournament.maxRounds;
 	},
 	methods: {
-		submitForm() {
-			console.log('CLICKY');
+		async submitForm() {
+			let maxRounds = parseInt(this.maxRounds);
+			if (isNaN(maxRounds) || maxRounds < 1) return;
+			await this.$store.dispatch('setupSetOptions', { maxRounds });
+			await this.$store.dispatch('startTournament');
+			this.$router.push('/round-setup/1');
 		}
 	}
 };

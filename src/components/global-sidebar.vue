@@ -58,7 +58,10 @@ export default {
       if (!tState) return '/';
       if (tState.lifecycle === 'setup-player-entry') return '/player-entry';
       if (tState.lifecycle === 'setup-options') return '/setup';
-      return '/dun-exits';
+      if (tState.lifecycle === 'in-progress') {
+        if (tState.roundLifecycle === 'setup') return `/round-setup/${tState.currentRoundNumber}`
+      }
+      return '/not-found';
     }
 	},
 	mounted() {

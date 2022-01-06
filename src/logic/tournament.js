@@ -9,17 +9,19 @@ import swiss from './swiss';
 			{ id: 2, name: 'Alice', status: 'active' },
 			{ id: 3, name: 'Bob', status: 'dropped' }
 		],
-		nextPlayerId: 4,
+		nextPlayerIdNum: 4,
 		maxRounds: 3,
-		currentRound: 2,
+		currentRoundNumber: 2,
+		currentRound: { ... },
 		roundLifecycle: 'in-progress',
-		roundHistory: [ ... ]
+		previousRounds: [ ... ]
 	}
 */
 const INITIAL_TSTATE = {
 	lifecycle: 'setup-player-entry',
-	players: [],
-	nextPlayerId: 1
+	players: {},
+	rounds: [],
+	nextPlayerIdNum: 1
 };
 
 function vuexConfig(appContext) {
@@ -36,20 +38,50 @@ function vuexConfig(appContext) {
 			},
 			setupAddPlayer(state, payload) {
 				let tState = state.activeTournament;
-				tState.players.push({
-					id: tState.nextPlayerId,
+				let playerId = 'p' + ('' + tState.nextPlayerIdNum).padStart(4, '0');
+				tState.players[playerId] = {
+					id: playerId,
 					name: payload.name,
-					status: 'active'
-				});
-				tState.nextPlayerId += 1;
+					status: 'setup'
+				};
+				tState.nextPlayerIdNum += 1;
 			},
-			setupDeletePlayer(state, payload) {
+			setupDeletePlayer(state, { playerId }) {
 				let tState = state.activeTournament;
-				let deleteIndex = tState.players.findIndex((elem) => elem.id === payload.playerId);
-				tState.players.splice(deleteIndex, 1);
+				delete tState.players[playerId];
 			},
-			setMaxRounds(state, { maxRounds }) {
+			setOptions(state, { maxRounds }) {
 				state.activeTournament.maxRounds = maxRounds;
+			},
+			preparePlayers(state) {
+				for (let player of Object.values(state.activeTournament.players)) {
+					player.status = 'active';
+					player.scores = {
+						wins: 0,
+						losses: 0,
+						draws: 0,
+						points: 0,
+						omwp: 0,
+						gwp: 0,
+						ogwp: 0,
+						rank: 1
+					};
+				}
+			},
+
+			startNextRound(state) {
+				let tState = state.activeTournament;
+				if (tState.currentRoundNumber) {
+					tState.currentRoundNumber += 1;
+					tState.previousRounds.push(tState.currentRound);
+				} else {
+					tState.currentRoundNumber = 1;
+				}
+				tState.currentRound = {};
+				tState.roundLifecycle = 'setup';
+			},
+			setPairings(state, { pairings }) {
+				state.activeTournament.currentRound.pairings = pairings;
 			}
 		},
 		actions: {
@@ -70,22 +102,35 @@ function vuexConfig(appContext) {
 			},
 
 			setupAddPlayer: async function({ commit, state }, payload) {
-				let nameConflict = state.activeTournament.players.find((elem) => elem.name === payload.name);
+				let nameConflict = Object.values(state.activeTournament.players).find((elem) => elem.name === payload.name);
 				if (nameConflict) {
 					let err = new Error('Name conflict');
 					err.name = 'NameConflictError';
 					throw err;
 				}
 				commit('setupAddPlayer', payload);
+				await appContext.storageEngine.setActiveTournament(state.activeTournament);
 			},
 			setupDeletePlayer: async function({ commit }, payload) {
 				commit('setupDeletePlayer', payload);
 			},
 			setupConfirmPlayers: async function({ commit, state }) {
 				commit('setLifecycle', { lifecycle: 'setup-options' });
-				commit('setMaxRounds', {
-					maxRounds: swiss.getDefaultMaxRounds(state.activeTournament.players.length
-				)});
+				commit('setOptions', {
+					maxRounds: swiss.getDefaultMaxRounds(Object.keys(state.activeTournament.players).length)
+				});
+				await appContext.storageEngine.setActiveTournament(state.activeTournament);
+			},
+			setupSetOptions: async function({ commit, state }, { maxRounds }) {
+				commit('setOptions', { maxRounds });
+				await appContext.storageEngine.setActiveTournament(state.activeTournament);
+			},
+			startTournament: async function({ commit, state }) {
+				commit('preparePlayers');
+				commit('startNextRound');
+				let pairings = swiss.getPairings(state.activeTournament.players);
+				commit('setPairings', { pairings });
+				commit('setLifecycle', { lifecycle: 'in-progress' });
 				await appContext.storageEngine.setActiveTournament(state.activeTournament);
 			}
 		},
@@ -93,6 +138,14 @@ function vuexConfig(appContext) {
 			hasActiveTournament: function(state) {
 				if (!state.activeTournament || Object.keys(state.activeTournament).length === 0) return false;
 				return true;
+			},
+			playersById: function(state) {
+				let ret = {};
+				let players = state.activeTournament && state.activeTournament.players || [];
+				for (let player of players) {
+					ret[player.id] = player;
+				}
+				return ret;
 			}
 		}
 	};

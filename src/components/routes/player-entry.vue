@@ -27,11 +27,14 @@
 			}
 		},
 		created() {
-			checkRedirect(this, { tStateLifecycle: [ 'setup-player-entry', 'setup-options' ] });
+			checkRedirect(this, {
+				tStateReqs: { lifecycle: [ 'setup-player-entry', 'setup-options' ] }
+			});
 		},
 		computed: {
 			players() {
-				return this.$store.state.activeTournament.players;
+				let ret = [ ...Object.values(this.$store.state.activeTournament.players || {}) ];
+				return ret.sort();;
 			}
 		},
 		methods: {

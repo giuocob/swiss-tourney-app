@@ -57,6 +57,9 @@ let store = createStore({
 	actions: vuexConfig.actions,
 	getters: vuexConfig.getters
 });
+store.unwrap = function(obj) {
+	return JSON.parse(JSON.stringify(obj));
+}
 
 let router = createRouter({
 	history: createWebHistory(),
