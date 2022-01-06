@@ -1,5 +1,5 @@
 <template>
-	<div class="w-md-50 mx-3 mt-4 player-entry">
+	<div class="mx-3 mt-4 player-entry">
 		<div v-for="player in players" class="d-flex flex-row bg-primary mb-3 py-2 shadow" :key="player.id">
 			<h4 class="flex-fill text-break ps-3 mb-0">{{player.name}}</h4>
 			<button @click="deletePlayer(player.id, $event)" class="btn btn-danger mx-3">DELETE</button>
@@ -11,7 +11,7 @@
 			</div>
 			<p v-if="invalidMessage" class="fs-6 text-danger">{{invalidMessage}}</p>
 		</div>
-		<button @click="submitForm" class="btn btn-lg btn-success mt-4">SUBMIT</button>
+		<button @click="submitForm" class="btn btn-lg btn-success mt-4">Submit</button>
 	</div>
 </template>
 
@@ -27,7 +27,7 @@
 			}
 		},
 		created() {
-			checkRedirect(this, { tStateLifecycle: 'setup-player-entry' });
+			checkRedirect(this, { tStateLifecycle: [ 'setup-player-entry', 'setup-options' ] });
 		},
 		computed: {
 			players() {
@@ -52,7 +52,7 @@
 				this.$store.dispatch('setupDeletePlayer', { playerId });
 			},
 			async submitForm(entries) {
-				if (this.players.length === 0) return;
+				if (this.players.length < 2) return;
 				await this.$store.dispatch('setupConfirmPlayers');
 				this.$router.push('/setup');
 			}

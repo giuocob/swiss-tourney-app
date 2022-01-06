@@ -13,6 +13,10 @@ input.transparent-input {
 	border: none;
 }
 
+input.numeric-small {
+  max-width: 4em;
+}
+
 div.player-entry {
   max-width: 1000px;
 }

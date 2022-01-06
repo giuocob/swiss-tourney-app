@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import swiss from './swiss';
 
 /*
 	Sample structure of tState:
@@ -24,7 +25,7 @@ const INITIAL_TSTATE = {
 function vuexConfig(appContext) {
 	return {
 		state: {
-			activeTournament: null
+			activeTournament: {}
 		},
 		mutations: {
 			setActiveTournament(state, payload) {
@@ -46,6 +47,9 @@ function vuexConfig(appContext) {
 				let tState = state.activeTournament;
 				let deleteIndex = tState.players.findIndex((elem) => elem.id === payload.playerId);
 				tState.players.splice(deleteIndex, 1);
+			},
+			setMaxRounds(state, { maxRounds }) {
+				state.activeTournament.maxRounds = maxRounds;
 			}
 		},
 		actions: {
@@ -79,6 +83,9 @@ function vuexConfig(appContext) {
 			},
 			setupConfirmPlayers: async function({ commit, state }) {
 				commit('setLifecycle', { lifecycle: 'setup-options' });
+				commit('setMaxRounds', {
+					maxRounds: swiss.getDefaultMaxRounds(state.activeTournament.players.length
+				)});
 				await appContext.storageEngine.setActiveTournament(state.activeTournament);
 			}
 		},
