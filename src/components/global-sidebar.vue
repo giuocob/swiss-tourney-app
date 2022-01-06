@@ -1,5 +1,5 @@
 <template>
-<nav class="navbar navbar-expand-lg navbar-light bg-primary">
+<nav class="navbar navbar-expand-md navbar-light bg-primary">
   <div class="container-fluid">
     <p class="navbar-brand my-0">Swiss Tourneys</p>
     <button ref="navToggle" class="navbar-toggler" type="button">
@@ -16,10 +16,10 @@
           </a>
           <ul class="dropdown-menu">
 						<li>
-							<router-link :to="navState.currentPage" class="dropdown-item">Current Page</router-link>
+							<router-link :to="currentPageLink" class="dropdown-item">Current Page</router-link>
 						</li>
 						<li>
-							<router-link :to="navState.currentPage" class="dropdown-item">Standings</router-link>
+							<router-link :to="currentPageLink" class="dropdown-item">Standings</router-link>
 						</li>
 						<li><hr class="dropdown-divider"></li>
 						<li v-for="round in navState.rounds">
@@ -46,14 +46,20 @@ export default {
 		navState() {
 			return {
 				activeTournament: true,
-				currentPage: '/player-entry',
 				standingsPage: '/standings',
 				rounds: [
 					{ name: 'Round 1', page: '/' },
 					{ name: 'Round 2', page: '/' }
 				]
 			};
-		}
+		},
+    currentPageLink() {
+      let tState = this.$store.state.activeTournament;
+      if (!tState) return '/';
+      if (tState.lifecycle === 'setup-player-entry') return '/player-entry';
+      if (tState.lifecycle === 'setup-options') return '/setup';
+      return '/dun-exits';
+    }
 	},
 	mounted() {
 		this.$bootstrap.addCollapse(this, this.$refs.navTarget, this.$refs.navToggle);

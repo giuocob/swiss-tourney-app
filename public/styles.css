@@ -8,11 +8,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-div.bigbox {
-  background-color: yellow;
-}
-
 input.transparent-input {
 	background-color: transparent;
 	border: none;
+}
+
+div.player-entry {
+  max-width: 1000px;
 }
