@@ -16,10 +16,10 @@
           </a>
           <ul class="dropdown-menu">
 						<li>
-							<router-link :to="currentPageLink" class="dropdown-item">Current Page</router-link>
+							<router-link :to="currentTournamentLink" class="dropdown-item">Current Page</router-link>
 						</li>
 						<li>
-							<router-link :to="currentPageLink" class="dropdown-item">Standings</router-link>
+							<router-link :to="currentTournamentLink" class="dropdown-item">Standings</router-link>
 						</li>
 						<li><hr class="dropdown-divider"></li>
 						<li v-for="round in navState.rounds">
@@ -38,6 +38,7 @@
 
 <script>
 import { mapGetters } from 'vuex';
+import { currentTournamentLink } from '../logic/routes';
 
 export default {
 	name: 'GlobalSidebar',
@@ -53,15 +54,9 @@ export default {
 				]
 			};
 		},
-    currentPageLink() {
+    currentTournamentLink() {
       let tState = this.$store.state.activeTournament;
-      if (!tState) return '/';
-      if (tState.lifecycle === 'setup-player-entry') return '/player-entry';
-      if (tState.lifecycle === 'setup-options') return '/setup';
-      if (tState.lifecycle === 'in-progress') {
-        if (tState.roundLifecycle === 'setup') return `/round-setup/${tState.currentRoundNumber}`
-      }
-      return '/not-found';
+      return currentTournamentLink(tState);
     }
 	},
 	mounted() {

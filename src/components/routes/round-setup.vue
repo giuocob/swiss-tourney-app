@@ -1,14 +1,21 @@
 <template>
-	<div class="mx-3 mt-4">
-		<h1>LEYGO</h1>
+	<div class="container">
+		<div class="row row-cols-1 row-cols-md-2">
+			<div v-for="pairing in expandedPairings" key="pairing[0].id" class="col my-2">
+				<pairing-display mode="view" :player-one="pairing[0]" :player-two="pairing[1]">
+				</pairing-display>
+			</div>
+		</div>
 	</div>
 </template>
 
 <script>
+import { mapGetters } from 'vuex';
+import { PairingDisplay } from '..';
 import { checkRedirect } from '../../logic/routes';
 
 export default {
-	name: 'route-tournament-setup',
+	name: 'route-round-setup',
 	data() {
 		return {
 			roundNumber: null
@@ -25,7 +32,11 @@ export default {
 			}
 		});
 	},
-	methods: {
+	computed: {
+		...mapGetters([ 'expandedPairings' ])
+	},
+	components: {
+		PairingDisplay
 	}
 };
 </script>

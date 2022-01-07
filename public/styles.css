@@ -20,3 +20,62 @@ input.numeric-small {
 div.player-entry {
   max-width: 1000px;
 }
+
+/* Pairing card */
+
+div.pairing-card {
+  display: flex;
+  align-items: center;
+  background-color: #c0c0c0;
+  border-radius: 5px;
+  min-height: 120px;
+}
+
+div.pairing-card div.paired-players {
+  flex-grow: 1;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+}
+
+div.pairing-card div.button-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+div.pairing-card div.horizontal-separator {
+  height: 1px;
+  background-color: #000000;
+  align-self: stretch;
+}
+
+div.pairing-card div.vertical-separator {
+  width: 1px;
+  background-color: #000000;
+  align-self: stretch;
+}
+
+div.player-name-bye {
+  font-style: italic;
+  opacity: 0.6;
+}
+
+div.player-name-forfeit {
+  font-style: italic;
+  opacity: 0.6;
+}
+
+div.player-name-locked {
+  font-style: italic;
+  color: #C62424;
+}
+
+div.player-scores {
+  float: right;
+}
+
+div.button-container > button {
+  width: 6em;
+}

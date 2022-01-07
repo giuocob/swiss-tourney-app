@@ -1,5 +1,9 @@
 <template>
 <div>
+	<button v-if="hasActiveTournament" @click="gotoCurrentTournamentLink"
+		class="btn btn-lg btn-success d-block mx-auto my-5">
+		Active Tournament
+	</button>
 	<button @click="startNewTournament" class="btn btn-lg btn-primary d-block mx-auto my-5">Start New Tourney</button>
 	<button @click="deleteTournament" class="btn btn-lg btn-danger d-block mx-auto my-5" >Delete Active Tourney</button>
 </div>
@@ -8,6 +12,7 @@
 <script>
 import { mapGetters } from 'vuex';
 import ParticipantDisplay from '../participant-display.vue';
+import { currentTournamentLink } from '../../logic/routes';
 
 export default {
 	name: 'route-main',
@@ -50,6 +55,10 @@ export default {
 					message: 'No active tourney to remove.'
 				});
 			}
+		},
+		gotoCurrentTournamentLink() {
+			let tState = this.$store.state.activeTournament;
+			this.$router.push(currentTournamentLink(tState));
 		}
 	},
 	components: { ParticipantDisplay }

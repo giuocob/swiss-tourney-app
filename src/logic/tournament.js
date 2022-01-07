@@ -146,6 +146,20 @@ function vuexConfig(appContext) {
 					ret[player.id] = player;
 				}
 				return ret;
+			},
+			expandedPairings: function(state) {
+				let pairings = state.activeTournament.currentRound && state.activeTournament.currentRound.pairings;
+				let players = state.activeTournament.players;
+				if (!pairings || !players) return null;
+				return pairings.map((pairing) => {
+					return pairing.map((playerId) => {
+						if (playerId === 'bye') return { id: playerId, name: 'Bye' };
+						if (playerId === 'forfeit') return { id: playerId, name: 'Forfeit' };
+						let playerObj = players[playerId];
+						if (!playerObj) return {};
+						return { id: playerId, name: playerObj.name, standing: swiss.getPlayerStandingString(playerObj) };
+					});
+				});
 			}
 		}
 	};

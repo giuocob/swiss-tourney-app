@@ -16,9 +16,19 @@ function checkRedirect(vm, conditionObj) {
 	}
 
 	if (shouldRedirect) {
-		vm.$router.push(HOME_PAGE);
+		vm.$router.replace(HOME_PAGE);
 	}
 	return shouldRedirect;
 }
 
-export { checkRedirect };
+function currentTournamentLink(tState) {
+	if (!tState) return '/';
+	if (tState.lifecycle === 'setup-player-entry') return '/player-entry';
+	if (tState.lifecycle === 'setup-options') return '/setup';
+	if (tState.lifecycle === 'in-progress') {
+		if (tState.roundLifecycle === 'setup') return `/round-setup/${tState.currentRoundNumber}`;
+	}
+	return '/not-found';
+}
+
+export { checkRedirect, currentTournamentLink };
