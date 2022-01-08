@@ -181,6 +181,17 @@ function vuexConfig(appContext) {
 					return ret;
 				});
 				return ep;
+			},
+			unlockedPlayers: function(state, { playersById }) {
+				let tState = state.activeTournament;
+				let unlockedPlayerIds = [];
+				let playersById = playersById();
+				for (let pairing of tState.currentRound.pairings) {
+					if (!pairing.locked) {
+						unlockedPlayerIds.push(...pairing.playerIds);
+					}
+				}
+				return unlockedPlayerIds.map((id) => playersById(id));
 			}
 		}
 	};
