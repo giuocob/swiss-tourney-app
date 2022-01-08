@@ -78,10 +78,21 @@ function vuexConfig(appContext) {
 					tState.currentRoundNumber = 1;
 				}
 				tState.currentRound = {};
+				tState.currentPairingId = 1;
 				tState.roundLifecycle = 'setup';
 			},
 			setPairings(state, { pairings }) {
+				for (let pairing of pairings) {
+					pairing.pairingId = state.activeTournament.currentPairingId;
+					state.activeTournament.currentPairingId += 1;
+				}
 				state.activeTournament.currentRound.pairings = pairings;
+			},
+			setPairingLocked(state, { pairingId, locked }) {
+				let pairings = state.activeTournament.currentRound.pairings;
+				if (!pairings) return;
+				let pairing = pairings.find((elem) => elem.pairingId === pairingId);
+				if (pairing) pairing.locked = locked;
 			}
 		},
 		actions: {
@@ -128,7 +139,7 @@ function vuexConfig(appContext) {
 			startTournament: async function({ commit, state }) {
 				commit('preparePlayers');
 				commit('startNextRound');
-				let pairings = swiss.getPairings(state.activeTournament.players);
+				let pairings = swiss.getPairings(Object.values(state.activeTournament.players));
 				commit('setPairings', { pairings });
 				commit('setLifecycle', { lifecycle: 'in-progress' });
 				await appContext.storageEngine.setActiveTournament(state.activeTournament);
@@ -151,15 +162,25 @@ function vuexConfig(appContext) {
 				let pairings = state.activeTournament.currentRound && state.activeTournament.currentRound.pairings;
 				let players = state.activeTournament.players;
 				if (!pairings || !players) return null;
-				return pairings.map((pairing) => {
-					return pairing.map((playerId) => {
+				let ep = pairings.map((pairing) => {
+					let ret = {
+						pairingId: pairing.pairingId,
+						locked: !!pairing.locked
+					};
+					ret.players = pairing.playerIds.map((playerId) => {
 						if (playerId === 'bye') return { id: playerId, name: 'Bye' };
 						if (playerId === 'forfeit') return { id: playerId, name: 'Forfeit' };
-						let playerObj = players[playerId];
-						if (!playerObj) return {};
-						return { id: playerId, name: playerObj.name, standing: swiss.getPlayerStandingString(playerObj) };
+						let player = players[playerId];
+						if (!player) return null;
+						return {
+							id: player.id,
+							name: player.name,
+							standing: swiss.getPlayerStandingString(player)
+						};
 					});
+					return ret;
 				});
+				return ep;
 			}
 		}
 	};

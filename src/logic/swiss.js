@@ -9,14 +9,13 @@ function getPlayerStandingString(playerObj) {
 }
 
 function getSortedPlayerIds(players) {
-	return Object.keys(players).sort((a, b) => {
-		let pa = players[a], pb = players[b];
-		if (pa.rank < pb.rank) return -1;
-		if (pa.rank > pb.rank) return 1;
-		if (a < b) return -1;
-		if (a > b) return 1;
+	return players.sort((a, b) => {
+		if (a.rank < b.rank) return -1;
+		if (a.rank > b.rank) return 1;
+		if (a.id < b.id) return -1;
+		if (a.id > b.id) return 1;
 		return 0;
-	});
+	}).map((p) => p.id);
 }
 
 // Temporary
@@ -25,9 +24,9 @@ function getPairings(players) {
 	let pairings = [];
 	for (let i = 0; i < playerIds.length; i += 2) {
 		if ((i + 1) < playerIds.length) {
-			pairings.push([ playerIds[i], playerIds[i + 1] ]);
+			pairings.push({ playerIds: [ playerIds[i], playerIds[i + 1] ] });
 		} else {
-			pairings.push([ playerIds[i], 'bye' ]);
+			pairings.push({ playerIds: [ playerIds[i], 'bye' ] });
 		}
 	}
 	return pairings;
