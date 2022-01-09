@@ -32,6 +32,10 @@ function getPairings(players) {
 	return pairings;
 }
 
+function calculateScores(players) {
+		console.log(JSON.stringify(players,null,4));
+}
+
 export default {
 	getDefaultMaxRounds,
 	getPlayerStandingString,

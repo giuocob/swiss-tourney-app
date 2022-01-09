@@ -3,16 +3,22 @@ import ComponentWrapper from './component-wrapper';
 
 class CollapseWrapper extends ComponentWrapper {
 
-	constructor(bsInstance, toggleEls=[]) {
+	constructor(bsInstance, targetEl, toggleEls=[]) {
 		super(bsInstance, { disposable: true });
+		this.targetEl = targetEl;
 		this.toggleEls = Array.isArray(toggleEls) ? toggleEls : [ toggleEls ];
+
+		this.targetEl.addEventListener('hidden.bs.collapse', () => {
+			this.targetEl.classList.remove('collapsing-no-animation');
+		});
 		for (let el of this.toggleEls) {
 			el.addEventListener('click', () => this.toggle());
 		}
 	}
 
 	reset() {
-		return this.hide();
+		this.targetEl.classList.add('collapsing-no-animation');
+		return this.bsInstance.hide();
 	}
 
 	show() {
@@ -31,7 +37,7 @@ class CollapseWrapper extends ComponentWrapper {
 
 function createCollapse(targetEl, toggleEls) {
 	let bc = new Collapse(targetEl, { toggle: false });
-	return new CollapseWrapper(bc, toggleEls);
+	return new CollapseWrapper(bc, targetEl, toggleEls);
 }
 
 export default createCollapse;

@@ -21,6 +21,12 @@ div.player-entry {
   max-width: 1000px;
 }
 
+/* Bootstrap animation */
+
+.collapsing-no-animation {
+  transition: none !important;
+}
+
 /* Pairing card */
 
 div.pairing-card {
@@ -86,4 +92,8 @@ div.player-scores {
 
 div.button-container > button {
   width: 6em;
+}
+
+/* Standings */
+table.standings-table td {
 }

@@ -19,7 +19,7 @@
 							<router-link :to="currentTournamentLink" class="dropdown-item">Current Page</router-link>
 						</li>
 						<li>
-							<router-link :to="currentTournamentLink" class="dropdown-item">Standings</router-link>
+							<router-link to="/standings" class="dropdown-item">Standings</router-link>
 						</li>
 						<li><hr class="dropdown-divider"></li>
 						<li v-for="round in navState.rounds">

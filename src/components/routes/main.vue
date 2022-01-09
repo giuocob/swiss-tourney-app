@@ -2,7 +2,7 @@
 <div>
 	<button v-if="hasActiveTournament" @click="gotoCurrentTournamentLink"
 		class="btn btn-lg btn-success d-block mx-auto my-5">
-		Active Tournament
+		Active Tourney
 	</button>
 	<button @click="startNewTournament" class="btn btn-lg btn-primary d-block mx-auto my-5">Start New Tourney</button>
 	<button @click="deleteTournament" class="btn btn-lg btn-danger d-block mx-auto my-5" >Delete Active Tourney</button>
