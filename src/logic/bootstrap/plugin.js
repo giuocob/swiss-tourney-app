@@ -1,4 +1,5 @@
 import createCollapse from './collapse';
+import createModal from './modal';
 
 function createBootstrapPlugin() {
 
@@ -6,7 +7,7 @@ function createBootstrapPlugin() {
 		return function(vm, ...createFnArgs) {
 			let handler = createFn(...createFnArgs);
 			vm.$bootstrapState.handlers.push(handler);
-			if (!vm.$bootstrapState.handlers.watchingRouteChange) {
+			if (!vm.$bootstrapState.watchingRouteChange) {
 				vm.$watch('$route', function(newVal, oldVal) {
 					if (newVal && oldVal && (newVal.path !== oldVal.path)) {
 						for (let handler of vm.$bootstrapState.handlers) {
@@ -14,12 +15,15 @@ function createBootstrapPlugin() {
 						}
 					}
 				});
+				vm.$bootstrapState.watchingRouteChange = true;
 			}
+			return handler;
 		}
 	}
 
 	let globalPluginObj = {
-		addCollapse: wrapCreateFn(createCollapse)
+		addCollapse: wrapCreateFn(createCollapse),
+		addModal: wrapCreateFn(createModal)
 	};
 
 	let mixin = {

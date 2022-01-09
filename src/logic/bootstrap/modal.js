@@ -1,4 +1,4 @@
-import { Collapse } from 'bootstrap';
+import { Modal } from 'bootstrap';
 import ComponentWrapper from './component-wrapper';
 
 class ModalWrapper extends ComponentWrapper {
@@ -25,9 +25,9 @@ class ModalWrapper extends ComponentWrapper {
 
 }
 
-function createModal(targetEl, toggleEls) {
-	let bc = new Modal(targetEl, { toggle: false });
-	return new ModalWrapper(bc, toggleEls);
+function createModal(targetEl) {
+	let bm = new Modal(targetEl);
+	return new ModalWrapper(bm);
 }
 
-export default createCollapse;
+export default createModal;

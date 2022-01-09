@@ -1,5 +1,8 @@
 <template>
 	<div class="mt-2 mx-3">
+		<div class="d-block ms-2 mb-2">
+			<h2>Round {{this.roundNumber}} Pairings</h2>
+		</div>
 		<div class="container m-0">
 			<div class="row row-cols-1 row-cols-md-2">
 				<div v-for="pairing in expandedPairings" key="pairing.pairingId" class="col my-2">
@@ -10,7 +13,9 @@
 		</div>
 		<div class="d-block ms-2">
 			<button @click="clickEdit" class="btn btn-warning d-block mt-3">Edit pairings</button>
-			<button @click="clickSubmit" class="btn btn-lg btn-success d-block mt-4">Start round</button>
+			<button @click="clickSubmit" :disabled="canStartRound" class="btn btn-lg btn-success d-block mt-4">
+				Start round
+			</button>
 		</div>
 	</div>
 </template>
@@ -39,7 +44,10 @@ export default {
 		});
 	},
 	computed: {
-		...mapGetters([ 'expandedPairings' ])
+		...mapGetters([ 'expandedPairings' ]),
+		canStartRound() {
+			return !!this.$store.state.activeTournament.pairingsValid;
+		}
 	},
 	methods: {
 		clickEdit: function() {

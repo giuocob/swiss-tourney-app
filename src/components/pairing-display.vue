@@ -50,9 +50,9 @@ export default {
 		getPlayerClasses(player) {
 			let ret = [];
 			if (player.id === 'bye') {
-				ret.push('player-name-bye')
+				ret.push('pname-bye')
 			} else if (player.id === 'forfeit') {
-				ret.push('player-name-forfeit');
+				ret.push('pname-forfeit');
 			}
 			if (this.pairing.locked && this.mode === 'edit') {
 				ret.push('player-name-locked');

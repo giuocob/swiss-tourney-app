@@ -65,6 +65,10 @@ let router = createRouter({
 	history: createWebHistory(),
 	routes: [ ...routeArray ]
 });
+router.beforeEach((to, from, next) => {
+	window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+	next();
+});
 
 let bootstrapPlugin = createBootstrapPlugin();
 

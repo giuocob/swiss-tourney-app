@@ -24,6 +24,11 @@ const INITIAL_TSTATE = {
 	nextPlayerIdNum: 1
 };
 
+function isRealPlayerId(id) {
+	if (id === 'bye' || id === 'forfeit') return false;
+	return true;
+}
+
 function vuexConfig(appContext) {
 	return {
 		state: {
@@ -79,14 +84,27 @@ function vuexConfig(appContext) {
 				}
 				tState.currentRound = {};
 				tState.currentPairingId = 1;
+				tState.pairingsValid = false;
 				tState.roundLifecycle = 'setup';
 			},
-			setPairings(state, { pairings }) {
+			setPairings(state, { pairings, pairingsValid }) {
 				for (let pairing of pairings) {
 					pairing.pairingId = state.activeTournament.currentPairingId;
 					state.activeTournament.currentPairingId += 1;
 				}
 				state.activeTournament.currentRound.pairings = pairings;
+				state.activeTournament.currentRound.pairingsValid = pairingsValid;
+			},
+			dirtyUpdatePairingPlayers(state, { pairingId, playerIds }) {
+				let tState = state.activeTournament;
+				let pairings = tState.currentRound.pairings;
+				if (!pairings) return;
+				let pairing = pairings.find((elem) => elem.pairingId === pairingId);
+				if (pairing) {
+					pairing.playerIds = playerIds;
+					pairing.locked = true;
+					tState.pairingsValid = false;
+				}
 			},
 			setPairingLocked(state, { pairingId, locked }) {
 				let pairings = state.activeTournament.currentRound.pairings;
@@ -140,8 +158,29 @@ function vuexConfig(appContext) {
 				commit('preparePlayers');
 				commit('startNextRound');
 				let pairings = swiss.getPairings(Object.values(state.activeTournament.players));
-				commit('setPairings', { pairings });
+				commit('setPairings', { pairings, pairingsValid: true });
 				commit('setLifecycle', { lifecycle: 'in-progress' });
+				await appContext.storageEngine.setActiveTournament(state.activeTournament);
+			},
+
+			setPairingLocked: async function({ commit, state }, { pairingId, locked }) {
+				commit('setPairingLocked', { pairingId, locked });
+				await appContext.storageEngine.setActiveTournament(state.activeTournament);
+			},
+			recalculatePairings: async function({ commit, state, getters }) {
+				let tState = state.activeTournament;
+				let lockedPairings = tState.currentRound.pairings.filter((pairing) => !!pairing.locked);
+				let realLockedPlayerCount = 0;
+				for (let pairing of lockedPairings) {
+					for (let playerId of pairing.playerIds) {
+						if (isRealPlayerId(playerId)) realLockedPlayerCount++;
+					}
+				}
+				if (realLockedPlayerCount + getters.unlockedPlayers.length !== Object.keys(tState.players).length) {
+					throw new Error('Player count error in recalculatePairings');
+				}
+				let newPairings = swiss.getPairings(getters.unlockedPlayers);
+				commit('setPairings', { pairings: lockedPairings.concat(newPairings), pairingsValid: true });
 				await appContext.storageEngine.setActiveTournament(state.activeTournament);
 			}
 		},
@@ -149,14 +188,6 @@ function vuexConfig(appContext) {
 			hasActiveTournament: function(state) {
 				if (!state.activeTournament || Object.keys(state.activeTournament).length === 0) return false;
 				return true;
-			},
-			playersById: function(state) {
-				let ret = {};
-				let players = state.activeTournament && state.activeTournament.players || [];
-				for (let player of players) {
-					ret[player.id] = player;
-				}
-				return ret;
 			},
 			expandedPairings: function(state) {
 				let pairings = state.activeTournament.currentRound && state.activeTournament.currentRound.pairings;
@@ -182,19 +213,27 @@ function vuexConfig(appContext) {
 				});
 				return ep;
 			},
-			unlockedPlayers: function(state, { playersById }) {
+			unlockedPlayers: function(state, getters) {
 				let tState = state.activeTournament;
-				let unlockedPlayerIds = [];
-				let playersById = playersById();
+				let unlockedPlayerIds = {};
+				let players = tState.players;
+				for (let playerId in players) {
+					unlockedPlayerIds[playerId] = true;
+				}
 				for (let pairing of tState.currentRound.pairings) {
-					if (!pairing.locked) {
-						unlockedPlayerIds.push(...pairing.playerIds);
+					if (pairing.locked) {
+						for (let playerId of pairing.playerIds) {
+							delete unlockedPlayerIds[playerId];
+						}
 					}
 				}
-				return unlockedPlayerIds.map((id) => playersById(id));
+				return Object.keys(unlockedPlayerIds).map((id) => players[id]);
 			}
 		}
 	};
 }
 
 export default { vuexConfig };
+export {
+	isRealPlayerId
+};

@@ -57,14 +57,22 @@ div.pairing-card div.vertical-separator {
   align-self: stretch;
 }
 
-div.player-name-bye {
+.pname-bye {
   font-style: italic;
   opacity: 0.6;
 }
 
-div.player-name-forfeit {
+.pname-bye-color {
+  color: #66E452;
+}
+
+.pname-forfeit {
   font-style: italic;
   opacity: 0.6;
+}
+
+.pname-forfeit-color {
+  color: #BF5A11;
 }
 
 div.player-name-locked {
