@@ -42,7 +42,7 @@
 		</div>
 		<div class="d-block ms-2">
 			<button @click="clickPair" class="btn btn-lg btn-info d-block mt-3">Re-pair</button>
-			<button @click="clickSubmit" :disabled="canConfirmPairings" class="btn btn-lg btn-success d-block mt-4">
+			<button @click="clickSubmit" :disabled="!canConfirmPairings" class="btn btn-lg btn-success d-block mt-4">
 				Confirm pairings
 			</button>
 		</div>
@@ -89,7 +89,8 @@ export default {
 			return this.getUnlockedPlayerOptions(this.selectPlayer2, this.selectPlayer1);
 		},
 		canConfirmPairings() {
-			return !!this.$store.state.activeTournament.pairingsValid;
+			console.log(this.$store.state.activeTournament);
+			return !!this.$store.state.activeTournament.currentRound.pairingsValid;
 		}
 	},
 	methods: {

@@ -81,6 +81,18 @@ div.pairing-card div.vertical-separator {
   color: #BF5A11;
 }
 
+.pname-winner {
+  color: #11AC06;
+}
+
+.pname-loser {
+  color: #AC3206;
+}
+
+.pname-draw {
+  color: #989500;
+}
+
 div.player-name-locked {
   font-style: italic;
   color: #C62424;

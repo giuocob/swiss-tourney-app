@@ -27,6 +27,7 @@ function currentTournamentLink(tState) {
 	if (tState.lifecycle === 'setup-options') return '/setup';
 	if (tState.lifecycle === 'in-progress') {
 		if (tState.roundLifecycle === 'setup') return `/round-setup/${tState.currentRoundNumber}`;
+		if (tState.roundLifecycle === 'in-progress') return `/round/${tState.currentRoundNumber}`;
 	}
 	return '/not-found';
 }

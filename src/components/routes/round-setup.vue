@@ -13,7 +13,7 @@
 		</div>
 		<div class="d-block ms-2">
 			<button @click="clickEdit" class="btn btn-warning d-block mt-3">Edit pairings</button>
-			<button @click="clickSubmit" :disabled="canStartRound" class="btn btn-lg btn-success d-block mt-4">
+			<button @click="clickSubmit" :disabled="!canStartRound" class="btn btn-lg btn-success d-block mt-4">
 				Start round
 			</button>
 		</div>
@@ -46,12 +46,16 @@ export default {
 	computed: {
 		...mapGetters([ 'expandedPairings' ]),
 		canStartRound() {
-			return !!this.$store.state.activeTournament.pairingsValid;
+			return !!this.$store.state.activeTournament.currentRound.pairingsValid;
 		}
 	},
 	methods: {
 		clickEdit: function() {
 			this.$router.push(`/round-edit/${this.roundNumber}`);
+		},
+		clickSubmit: async function() {
+			await this.$store.dispatch('startRound');
+			this.$router.push(`/round/${this.roundNumber}`);
 		}
 	},
 	components: {
