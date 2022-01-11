@@ -89,7 +89,6 @@ export default {
 			return this.getUnlockedPlayerOptions(this.selectPlayer2, this.selectPlayer1);
 		},
 		canConfirmPairings() {
-			console.log(this.$store.state.activeTournament);
 			return !!this.$store.state.activeTournament.currentRound.pairingsValid;
 		}
 	},

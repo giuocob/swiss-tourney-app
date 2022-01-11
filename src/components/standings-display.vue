@@ -47,8 +47,8 @@ export default {
 	computed: {
 		sortedPlayers() {
 			return Object.values(this.$store.state.activeTournament.players).sort((a, b) => {
-				if (a.rank < b.rank) return -1;
-				if (a.rank > b.rank) return 1;
+				if (a.scores.rank < b.scores.rank) return -1;
+				if (a.scores.rank > b.scores.rank) return 1;
 				if (a.id < b.id) return -1;
 				if (a.id > b.id) return 1;
 				return 0;
@@ -58,8 +58,8 @@ export default {
 	methods: {
 		getPlayerStandingString: swiss.getPlayerStandingString,
 		formatPercent(num) {
-			if (!num) return 0;
-			return Math.floor(num * 1000) / 1000;
+			if (typeof num !== 'number') return 0;
+			return num.toFixed(3);
 		},
 		toggleTiebreaks() {
 			this.showTiebreaks = !this.showTiebreaks;

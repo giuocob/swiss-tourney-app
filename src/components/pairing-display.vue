@@ -9,7 +9,7 @@
 				<div v-if="player.standing && (mode === 'view')" class="d-inline me-3 player-scores">
 					{{player.standing}}
 				</div>
-				<div v-else-if="mode === 'active' && pairing.submitted && pairing.isReal"
+				<div v-else-if="(mode === 'active' || mode === 'review') && pairing.submitted && pairing.isReal"
 					class="d-inline me-3 player-scores"
 				>
 					{{player.wins}}
@@ -81,7 +81,7 @@ export default {
 				ret.push('pname-bye')
 			} else if (player.id === 'forfeit') {
 				ret.push('pname-forfeit');
-			} else if (this.mode === 'active') {
+			} else if (this.mode === 'active' || this.mode === 'review') {
 				if (player.result === 'winner') {
 					ret.push('pname-winner');
 				} else if (player.result === 'loser') {

@@ -11,6 +11,7 @@ function checkRedirect(vm, conditionObj) {
 		let cvArr = Array.isArray(conditionValue) ? conditionValue : [ conditionValue ];
 		if (!cvArr.find((elem) => (elem === tState[conditionKey]))) shouldRedirect = true;
 	}
+
 	if (conditionObj.customFn) {
 		if (conditionObj.customFn(tState) === true) shouldRedirect = true;
 	}
@@ -28,7 +29,9 @@ function currentTournamentLink(tState) {
 	if (tState.lifecycle === 'in-progress') {
 		if (tState.roundLifecycle === 'setup') return `/round-setup/${tState.currentRoundNumber}`;
 		if (tState.roundLifecycle === 'in-progress') return `/round/${tState.currentRoundNumber}`;
+		if (tState.roundLifecycle === 'complete') return `/round-complete`;
 	}
+	if (tState.lifecycle === 'complete') return '/standings';
 	return '/not-found';
 }
 

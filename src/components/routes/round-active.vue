@@ -47,7 +47,7 @@
 		</div>
 		<div class="d-block ms-2 my-3">
 			<button @click="clickCancel" class="btn btn-sm btn-danger d-block mt-3">Cancel round</button>
-			<button @click="clickSubmit" :disabled="!canCompleteRound" class="btn btn-lg btn-success d-block mt-4">
+			<button @click="clickCompleteRound" :disabled="!canCompleteRound" class="btn btn-lg btn-success d-block mt-4">
 				Complete Round
 			</button>
 		</div>
@@ -121,6 +121,10 @@ export default {
 					}
 				]
 			});
+		},
+		async clickCompleteRound() {
+			await this.$store.dispatch('completeRound');
+			this.$router.push('/round-complete');
 		},
 		openScoreModal: function(pairingId) {
 			this.currentPairingId = pairingId;

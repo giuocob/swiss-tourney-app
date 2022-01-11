@@ -22,8 +22,8 @@
 							<router-link to="/standings" class="dropdown-item">Standings</router-link>
 						</li>
 						<li><hr class="dropdown-divider"></li>
-						<li v-for="round in navState.rounds">
-							<router-link :to="round.page" class="dropdown-item">{{round.name}}</router-link>
+						<li v-for="round in roundLinks">
+							<router-link :to="round.link" class="dropdown-item">{{round.name}}</router-link>
 						</li>
           </ul>
         </li>
@@ -44,16 +44,16 @@ export default {
 	name: 'GlobalSidebar',
 	computed: {
     ...mapGetters([ 'hasActiveTournament' ]),
-		navState() {
-			return {
-				activeTournament: true,
-				standingsPage: '/standings',
-				rounds: [
-					{ name: 'Round 1', page: '/' },
-					{ name: 'Round 2', page: '/' }
-				]
-			};
-		},
+    roundLinks() {
+      let tState = this.$store.state.activeTournament || {};
+      return (tState.rounds || []).map((roundObj, index) => {
+        let roundNum = index + 1;
+        return {
+          name: `Round ${roundNum}`,
+          link: `/round-review/${roundNum}`
+        };
+      });
+    },
     currentTournamentLink() {
       let tState = this.$store.state.activeTournament;
       return currentTournamentLink(tState);
