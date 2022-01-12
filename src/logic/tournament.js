@@ -202,10 +202,11 @@ function vuexConfig(appContext) {
 				await appContext.storageEngine.setActiveTournament(state.activeTournament);
 			},
 			startTournament: async function({ commit, state }) {
+				let tState = state.activeTournament;
 				commit('preparePlayers');
-				commit('setScores', { scores: swiss.calculateStandings([], state.activeTournament.players) });
+				commit('setScores', { scores: swiss.calculateStandings([], tState.players) });
+				let pairings = await swiss.getNextPairings([], tState.players);
 				commit('setupNextRound');
-				let pairings = swiss.getPairings(Object.values(state.activeTournament.players));
 				commit('setPairings', { pairings, pairingsValid: true });
 				commit('setLifecycle', { lifecycle: 'in-progress' });
 				await appContext.storageEngine.setActiveTournament(state.activeTournament);
@@ -230,7 +231,11 @@ function vuexConfig(appContext) {
 				if (realLockedPlayerCount + getters.unlockedPlayers.length !== Object.keys(tState.players).length) {
 					throw new Error('Player count error in recalculatePairings');
 				}
-				let newPairings = swiss.getPairings(getters.unlockedPlayers);
+				let pairingPlayers = {};
+				for (let player of getters.unlockedPlayers) {
+					pairingPlayers[player.id] = player;
+				}
+				let newPairings = await swiss.getNextPairings(tState.rounds, pairingPlayers);
 				commit('setPairings', { pairings: lockedPairings.concat(newPairings), pairingsValid: true });
 				await appContext.storageEngine.setActiveTournament(state.activeTournament);
 			},
@@ -276,8 +281,8 @@ function vuexConfig(appContext) {
 			setupNextRound: async function({ commit, state }) {
 				let tState = state.activeTournament;
 				if (tState.roundLifecycle !== 'complete') throw new Error('Invalid dispatch of setupNextRound');
+				let pairings = await swiss.getNextPairings(tState.rounds, tState.players);
 				commit('setupNextRound');
-				let pairings = swiss.getPairings(Object.values(state.activeTournament.players));
 				commit('setPairings', { pairings, pairingsValid: true });
 				await appContext.storageEngine.setActiveTournament(state.activeTournament);
 			},

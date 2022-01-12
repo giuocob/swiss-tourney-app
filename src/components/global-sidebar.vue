@@ -21,7 +21,7 @@
 						<li>
 							<router-link to="/standings" class="dropdown-item">Standings</router-link>
 						</li>
-						<li><hr class="dropdown-divider"></li>
+						<li v-if="roundLinks.length > 0"><hr class="dropdown-divider"></li>
 						<li v-for="round in roundLinks">
 							<router-link :to="round.link" class="dropdown-item">{{round.name}}</router-link>
 						</li>
