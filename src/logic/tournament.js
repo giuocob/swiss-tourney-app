@@ -55,9 +55,28 @@ function vuexConfig(appContext) {
 				};
 				tState.nextPlayerIdNum += 1;
 			},
+			activeAddPlayer(state, payload) {
+				let tState = state.activeTournament;
+				let playerId = 'p' + ('' + tState.nextPlayerIdNum).padStart(4, '0');
+				tState.players[playerId] = {
+					id: playerId,
+					name: payload.name,
+					status: 'active',
+					scores: {}
+				};
+				if (tState.currentRound && tState.roundLifecycle === 'setup') {
+					tState.currentRound.pairingsValid = false;
+				}
+				tState.nextPlayerIdNum += 1;
+			},
 			setupDeletePlayer(state, { playerId }) {
 				let tState = state.activeTournament;
 				delete tState.players[playerId];
+			},
+			dropPlayer(state, { playerId }) {
+				let tState = state.activeTournament;
+				let player = tState.players[playerId];
+				if (player) player.status = 'dropped';
 			},
 			setOptions(state, { maxRounds }) {
 				state.activeTournament.maxRounds = maxRounds;
@@ -187,8 +206,31 @@ function vuexConfig(appContext) {
 				commit('setupAddPlayer', payload);
 				await appContext.storageEngine.setActiveTournament(state.activeTournament);
 			},
-			setupDeletePlayer: async function({ commit }, payload) {
+			activeAddPlayer: async function({ commit, state, dispatch }, payload) {
+				if (state.activeTournament.lifecycle !== 'in-progress') {
+					throw new Error('Invalid dispatch of activeAddPlayer');
+				}
+				let nameConflict = Object.values(state.activeTournament.players).find((elem) => elem.name === payload.name);
+				if (nameConflict) {
+					let err = new Error('Name conflict');
+					err.name = 'NameConflictError';
+					throw err;
+				}
+				commit('activeAddPlayer', payload);
+				await dispatch('recalculateStandings', {});
+				await appContext.storageEngine.setActiveTournament(state.activeTournament);
+			},
+			setupDeletePlayer: async function({ commit, state }, payload) {
 				commit('setupDeletePlayer', payload);
+				await appContext.storageEngine.setActiveTournament(state.activeTournament);
+			},
+			dropPlayer: async function({ commit, state, dispatch }, { playerId }) {
+				if (state.activeTournament.lifecycle !== 'in-progress') {
+					throw new Error('Invalid dispatch of activeAddPlayer');
+				}
+				commit('dropPlayer', { playerId });
+				await dispatch('recalculateStandings', {});
+				await appContext.storageEngine.setActiveTournament(state.activeTournament);
 			},
 			setupConfirmPlayers: async function({ commit, state }) {
 				commit('setLifecycle', { lifecycle: 'setup-options' });
@@ -228,7 +270,11 @@ function vuexConfig(appContext) {
 						if (swiss.isRealPlayerId(playerId)) realLockedPlayerCount++;
 					}
 				}
-				if (realLockedPlayerCount + getters.unlockedPlayers.length !== Object.keys(tState.players).length) {
+				let activePlayerCount = 0;
+				for (let player of Object.values(tState.players)) {
+					if (player.status === 'active') activePlayerCount++;
+				}
+				if (realLockedPlayerCount + getters.unlockedPlayers.length !== activePlayerCount) {
 					throw new Error('Player count error in recalculatePairings');
 				}
 				let pairingPlayers = {};
@@ -270,6 +316,7 @@ function vuexConfig(appContext) {
 				}
 				let newStandings = swiss.calculateStandings(allRounds, tState.players);
 				commit('setScores', { scores: newStandings });
+				await appContext.storageEngine.setActiveTournament(state.activeTournament);
 			},
 			completeRound: async function({ commit, state, dispatch }) {
 				let tState = state.activeTournament;
@@ -364,7 +411,9 @@ function vuexConfig(appContext) {
 				let unlockedPlayerIds = {};
 				let players = tState.players;
 				for (let playerId in players) {
-					unlockedPlayerIds[playerId] = true;
+					if (players[playerId].status === 'active') {
+						unlockedPlayerIds[playerId] = true;
+					}
 				}
 				for (let pairing of tState.currentRound.pairings) {
 					if (pairing.locked) {

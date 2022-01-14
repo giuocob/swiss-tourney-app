@@ -17,6 +17,10 @@ input.numeric-small {
   max-width: 4em;
 }
 
+input.latecomer-input {
+  max-width: 25em;
+}
+
 div.player-entry {
   max-width: 1000px;
 }
@@ -91,6 +95,10 @@ div.pairing-card div.vertical-separator {
 
 .pname-draw {
   color: #989500;
+}
+
+.pname-dropped {
+  font-style: italic;
 }
 
 div.player-name-locked {

@@ -143,7 +143,7 @@ async function getNextPairings(prevRounds, players) {
 					if (sbattempt < ATTEMPTS_PER_BUCKET) {
 						// Reset and try bucket again
 						continue;
-					} else if (sbi === scoreBucket.length - 1) {
+					} else if (sbi === scoreBuckets.length - 1) {
 						// Unresolved pairings at the end; scrap attempt
 						fullFail = true;
 						break;

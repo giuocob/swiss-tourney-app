@@ -6,6 +6,7 @@ import RouteRoundSetup from './round-setup.vue';
 import RouteRoundActive from './round-active.vue';
 import RouteRoundComplete from './round-complete.vue';
 import RouteRoundReview from './round-review.vue';
+import RoutePlayers from './players.vue';
 import RouteStandings from './standings.vue';
 import RouteTournamentSetup from './tournament-setup.vue';
 
@@ -18,6 +19,7 @@ export default [
 	{ path: '/round/:roundNumber', component: RouteRoundActive },
 	{ path: '/round-complete', component: RouteRoundComplete },
 	{ path: '/round-review/:roundNumber', component: RouteRoundReview },
+	{ path: '/players', component: RoutePlayers },
 	{ path: '/standings', component: RouteStandings },
 	{ path: '/:catchAll(.*)', component: PageNotFound }
 ];

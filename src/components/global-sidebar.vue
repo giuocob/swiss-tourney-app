@@ -18,7 +18,11 @@
 						<li>
 							<router-link :to="currentTournamentLink" class="dropdown-item">Current Page</router-link>
 						</li>
-						<li>
+            <li v-if="tournamentRunning"><hr class="dropdown-divider"></li>
+            <li v-if="tournamentRunning">
+              <router-link to="/players" class="dropdown-item">Players</router-link>
+            </li>
+						<li v-if="tournamentRunning">
 							<router-link to="/standings" class="dropdown-item">Standings</router-link>
 						</li>
 						<li v-if="roundLinks.length > 0"><hr class="dropdown-divider"></li>
@@ -57,6 +61,11 @@ export default {
     currentTournamentLink() {
       let tState = this.$store.state.activeTournament;
       return currentTournamentLink(tState);
+    },
+    tournamentRunning() {
+      let lifecycle = this.$store.state.activeTournament && this.$store.state.activeTournament.lifecycle;
+      if (lifecycle === 'in-progress' || lifecycle === 'complete') return true;
+      return false;
     }
 	},
 	mounted() {

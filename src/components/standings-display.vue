@@ -52,7 +52,8 @@ export default {
 				if (a.id < b.id) return -1;
 				if (a.id > b.id) return 1;
 				return 0;
-			});
+			})
+				.filter((player) => (player.status === 'active'));
 		}
 	},
 	methods: {

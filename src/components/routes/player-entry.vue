@@ -33,8 +33,11 @@
 		},
 		computed: {
 			players() {
-				let ret = [ ...Object.values(this.$store.state.activeTournament.players || {}) ];
-				return ret.sort();;
+				let tState = this.$store.state.activeTournament;
+				if (!tState) return [];
+				return Object.keys(tState.players || {})
+					.sort()
+					.map((playerId) => tState.players[playerId]);
 			}
 		},
 		methods: {
@@ -47,6 +50,7 @@
 						this.invalidMessage = 'Identical names not allowed';
 						return;
 					}
+					throw err;
 				}
 				this.inputName = '';
 				this.$refs.entryText.focus();
