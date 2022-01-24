@@ -134,7 +134,7 @@ async function getNextPairings(prevRounds, players) {
 						}
 					}
 					if (!didPair) {
-						failedToPair.push(floatPlayerId);
+						failedToPair.push(matchPlayerId);
 						bucketFail = true;
 					}
 				}
