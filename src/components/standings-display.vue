@@ -46,14 +46,15 @@ export default {
 	},
 	computed: {
 		sortedPlayers() {
-			return Object.values(this.$store.state.activeTournament.players).sort((a, b) => {
-				if (a.scores.rank < b.scores.rank) return -1;
-				if (a.scores.rank > b.scores.rank) return 1;
-				if (a.id < b.id) return -1;
-				if (a.id > b.id) return 1;
-				return 0;
-			})
-				.filter((player) => (player.status === 'active'));
+			return Object.values(this.$store.state.activeTournament.players)
+			.filter((player) => (player.status === 'active'))
+			.sort((a, b) => {
+					if (a.scores.rank < b.scores.rank) return -1;
+					if (a.scores.rank > b.scores.rank) return 1;
+					if (a.id < b.id) return -1;
+					if (a.id > b.id) return 1;
+					return 0;
+				});
 		}
 	},
 	methods: {

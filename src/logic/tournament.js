@@ -137,6 +137,10 @@ function vuexConfig(appContext) {
 					} else if (pairing.playerIds[1] === 'bye') {
 						pairing.wins[0] = 2;
 						pairing.winnerIndex = 0;
+					} else if (pairing.playerIds[0] === 'forfeit') {
+						pairing.winnerIndex = 0;
+					} else if (pairing.playerIds[1] === 'forfeit') {
+						pairing.winnerIndex = 1;
 					}
 				}
 			},
