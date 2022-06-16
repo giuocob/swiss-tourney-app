@@ -15,7 +15,7 @@
 					{{player.wins}}
 				</div>
 			</div>
-			<div v-if="index === 0" class="horizontal-separator ms-1"></div>
+			<div v-if="index < pairing.players.length - 1" class="horizontal-separator ms-1"></div>
 		</template>
 	</div>
 	<template v-if="mode === 'edit'">

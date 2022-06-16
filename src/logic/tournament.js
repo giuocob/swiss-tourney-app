@@ -78,8 +78,9 @@ function vuexConfig(appContext) {
 				let player = tState.players[playerId];
 				if (player) player.status = 'dropped';
 			},
-			setOptions(state, { maxRounds }) {
+			setOptions(state, { maxRounds, playersPerRound }) {
 				state.activeTournament.maxRounds = maxRounds;
+				state.activeTournament.playersPerRound = playersPerRound;
 			},
 			preparePlayers(state) {
 				for (let player of Object.values(state.activeTournament.players)) {
@@ -235,19 +236,24 @@ function vuexConfig(appContext) {
 			setupConfirmPlayers: async function({ commit, state }) {
 				commit('setLifecycle', { lifecycle: 'setup-options' });
 				commit('setOptions', {
-					maxRounds: swiss.getDefaultMaxRounds(Object.keys(state.activeTournament.players).length)
+					maxRounds: swiss.getDefaultMaxRounds(Object.keys(state.activeTournament.players).length),
+					playersPerRound: 2
 				});
 				await appContext.storageEngine.setActiveTournament(state.activeTournament);
 			},
-			setupSetOptions: async function({ commit, state }, { maxRounds }) {
-				commit('setOptions', { maxRounds });
+			setupSetOptions: async function({ commit, state }, { maxRounds, playersPerRound }) {
+				commit('setOptions', { maxRounds, playersPerRound });
 				await appContext.storageEngine.setActiveTournament(state.activeTournament);
 			},
 			startTournament: async function({ commit, state }) {
 				let tState = state.activeTournament;
 				commit('preparePlayers');
 				commit('setScores', { scores: swiss.calculateStandings([], tState.players) });
-				let pairings = await swiss.getNextPairings([], tState.players);
+				let pairings = await swiss.getNextPairings(
+					[],
+					tState.players,
+					{ playersPerRound: tState.playersPerRound }
+				);
 				commit('setupNextRound');
 				commit('setPairings', { pairings, pairingsValid: true });
 				commit('setLifecycle', { lifecycle: 'in-progress' });
@@ -281,7 +287,11 @@ function vuexConfig(appContext) {
 				for (let player of getters.unlockedPlayers) {
 					pairingPlayers[player.id] = player;
 				}
-				let newPairings = await swiss.getNextPairings(tState.rounds, pairingPlayers);
+				let newPairings = await swiss.getNextPairings(
+					tState.rounds,
+					pairingPlayers,
+					{ playersPerRound: tState.playersPerRound }
+				);
 				commit('setPairings', { pairings: lockedPairings.concat(newPairings), pairingsValid: true });
 				await appContext.storageEngine.setActiveTournament(state.activeTournament);
 			},
@@ -328,7 +338,11 @@ function vuexConfig(appContext) {
 			setupNextRound: async function({ commit, state }) {
 				let tState = state.activeTournament;
 				if (tState.roundLifecycle !== 'complete') throw new Error('Invalid dispatch of setupNextRound');
-				let pairings = await swiss.getNextPairings(tState.rounds, tState.players);
+				let pairings = await swiss.getNextPairings(
+					tState.rounds,
+					tState.players,
+					{ playersPerRound: tState.playersPerRound }
+				);
 				commit('setupNextRound');
 				commit('setPairings', { pairings, pairingsValid: true });
 				await appContext.storageEngine.setActiveTournament(state.activeTournament);
