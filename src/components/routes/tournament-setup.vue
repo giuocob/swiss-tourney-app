@@ -25,8 +25,8 @@
 import { checkRedirect } from '../../logic/routes';
 
 const ROUND_TYPES = [
-	{ id: 'normal', label: 'Normal', playersPerRound: 2 },
-	{ id: 'commander', label: 'Commander', playersPerRound: 4 }
+	{ id: 'normal', label: 'Normal', playersPerRound: 2, byeGanesAwarded: 2 },
+	{ id: 'commander', label: 'Commander', playersPerRound: 4, byeGamesAwarded: 1 }
 ];
 
 export default {
@@ -55,9 +55,13 @@ export default {
 		async submitForm() {
 			let maxRounds = parseInt(this.maxRounds);
 			if (isNaN(maxRounds) || maxRounds < 1) return;
-			let playersPerRound = ROUND_TYPES.find((obj) => (obj.id === this.roundType))?.playersPerRound;
-			if (!playersPerRound) return;
-			await this.$store.dispatch('setupSetOptions', { maxRounds, playersPerRound });
+			let roundTypeObj = ROUND_TYPES.find((obj) => (obj.id === this.roundType));
+			if (!roundTypeObj) return;
+			await this.$store.dispatch('setupSetOptions', {
+				maxRounds,
+				playersPerRound: roundTypeObj.playersPerRound,
+				byeGamesAwarded: roundTypeObj.byeGamesAwarded
+			});
 			await this.$store.dispatch('startTournament');
 			this.$router.push('/round-setup/1');
 		}

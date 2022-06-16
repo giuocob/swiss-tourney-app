@@ -14,6 +14,7 @@ import swiss from './swiss';
 		currentRoundNumber: 2,
 		currentRound: {
 			pairings: [ {
+				pairingId: 1,
 			  playerIds: [ 'p0001', 'bye' ],
 				wins: [ 2, 0 ],
 				draws: 0,
@@ -78,9 +79,10 @@ function vuexConfig(appContext) {
 				let player = tState.players[playerId];
 				if (player) player.status = 'dropped';
 			},
-			setOptions(state, { maxRounds, playersPerRound }) {
+			setOptions(state, { maxRounds, playersPerRound, byeGamesAwarded }) {
 				state.activeTournament.maxRounds = maxRounds;
 				state.activeTournament.playersPerRound = playersPerRound;
+				state.activeTournament.byeGamesAwarded = byeGamesAwarded;
 			},
 			preparePlayers(state) {
 				for (let player of Object.values(state.activeTournament.players)) {
@@ -127,19 +129,7 @@ function vuexConfig(appContext) {
 				if (pairing) pairing.locked = locked;
 			},
 			startRound(state) {
-				let tState = state.activeTournament;
-				tState.roundLifecycle = 'in-progress';
-				for (let pairing of tState.currentRound.pairings) {
-					pairing.wins = [ 0, 0 ];
-					pairing.draws = 0;
-					if (pairing.playerIds[0] === 'bye') {
-						pairing.wins[1] = 2;
-						pairing.winnerIndex = 1;
-					} else if (pairing.playerIds[1] === 'bye') {
-						pairing.wins[0] = 2;
-						pairing.winnerIndex = 0;
-					}
-				}
+				state.activeTournament.roundLifecycle = 'in-progress';
 			},
 			cancelRound(state) {
 				let tState = state.activeTournament;
@@ -163,14 +153,38 @@ function vuexConfig(appContext) {
 				if (!pairings) return;
 				let pairing = pairings.find((elem) => elem.pairingId === pairingId);
 				if (pairing) {
-					pairing.wins = wins;
-					pairing.draws = draws;
-					if (wins[0] > wins[1]) {
-						pairing.winnerIndex = 0;
-					} else if (wins[1] > wins[0]) {
-						pairing.winnerIndex = 1;
+					pairing.wins = wins || pairing.playerIds.map((elem) => 0);
+					pairing.draws = draws || 0;
+					// Handle trivial results like forfeits and byes
+					let pairingHasForfeit = !!pairing.playerIds.find((id) => (id === 'forfeit'));
+					let pairingRealPlayerCount = pairing.playerIds.reduce((sum, elem) => {
+						if (swiss.isRealPlayerId(elem)) sum++;
+						return sum;
+					}, 0);
+					if (pairingHasForfeit) {
+						// Empty (no wins for any player)
+					} else if (pairingRealPlayerCount === 1) {
+						pairing.winnerIndex = pairing.playerIds.findIndex((elem) => swiss.isRealPlayerId(elem));
+						pairing.wins[pairing.winnerIndex] = state.activeTournament.byeGamesAwarded;
+					} else if (wins) {
+						// Calculate winnerIndex
+						let bestGameScore = 0;
+						let bestIndexes = [];
+						for (let i = 0; i < wins.length; i++) {
+							if (wins[i] > bestGameScore) {
+								bestGameScore = wins[i];
+								bestIndexes = [ i ];
+							} else if (wins[i] === bestGameScore) {
+								bestIndexes.push(i);
+							}
+						}
+						if (bestGameScore > 0 && bestIndexes.length === 1) {
+							pairing.winnerIndex = bestIndexes[0];
+						} else {
+							pairing.winnerIndex = -1;
+						}
 					} else {
-						pairing.winnerIndex = -1;
+						pairing.winnerIndex = undefined;
 					}
 				}
 			},
@@ -241,8 +255,8 @@ function vuexConfig(appContext) {
 				});
 				await appContext.storageEngine.setActiveTournament(state.activeTournament);
 			},
-			setupSetOptions: async function({ commit, state }, { maxRounds, playersPerRound }) {
-				commit('setOptions', { maxRounds, playersPerRound });
+			setupSetOptions: async function({ commit, state }, { maxRounds, playersPerRound, byeGamesAwarded }) {
+				commit('setOptions', { maxRounds, playersPerRound, byeGamesAwarded });
 				await appContext.storageEngine.setActiveTournament(state.activeTournament);
 			},
 			startTournament: async function({ commit, state }) {
@@ -304,6 +318,9 @@ function vuexConfig(appContext) {
 					throw new Error('Invalid dispatch of startRound');
 				}
 				commit('startRound');
+				for (let pairing of tState.currentRound.pairings) {
+					commit('setPairingScores', { pairingId: pairing.pairingId })
+				}
 				await appContext.storageEngine.setActiveTournament(state.activeTournament);
 			},
 			cancelRound: async function({ commit, state }) {
@@ -384,7 +401,8 @@ function vuexConfig(appContext) {
 							isReal: true
 						};
 						ret.players = pairing.playerIds.map((playerId, index) => {
-							if (playerId === 'bye' || playerId === 'forfeit') ret.isReal = false;
+							if (!swiss.isRealPlayerId(playerId)) ret.isReal = false;
+							if (playerId === 'none') return { id: playerId, name: 'None' };
 							if (playerId === 'bye') return { id: playerId, name: 'Bye' };
 							if (playerId === 'forfeit') return { id: playerId, name: 'Forfeit' };
 
@@ -399,17 +417,18 @@ function vuexConfig(appContext) {
 						});
 						if (typeof ret.winnerIndex === 'number') {
 							ret.submitted = true;
-							if (ret.winnerIndex === 0) {
-								ret.players[0].result = 'winner';
-								ret.players[1].result = 'loser';
-							} else if (ret.winnerIndex === 1) {
-								ret.players[1].result = 'winner';
-								ret.players[0].result = 'loser';
-							} else if (ret.winnerIndex === -1) {
-								ret.players[0].result = 'draw';
-								ret.players[1].result = 'draw';
+							if (ret.winnerIndex === -1) {
+								for (let player of ret.players) {
+									player.result = 'draw';
+								}
 							} else {
-								throw new Error('Unknown winnerIndex value');
+								for (let i = 0; i < ret.players.length; i++) {
+									if (i === ret.winnerIndex) {
+										ret.players[i].result = 'winner';
+									} else {
+										ret.players[i].result = 'loser';
+									}
+								}
 							}
 						}
 						return ret;
