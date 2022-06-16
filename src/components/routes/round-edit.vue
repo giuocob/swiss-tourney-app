@@ -4,17 +4,14 @@
 			<div class="modal-content">
 				<div class="modal-body">
 					<div class="fs-4 mb-2">Edit Pairing</div>
-					<select v-model="selectPlayer1" class="form-select">
-						<option v-for="option in unlockedPlayerOptions1" :value="option.id" :class="option.addClasses">
-							{{option.name}}
-						</option>
-					</select>
-					<div class="my-2 fs-5 text-center">v.s.</div>
-					<select v-model="selectPlayer2" class="form-select">
-						<option v-for="option in unlockedPlayerOptions2" :value="option.id" :class="option.addClasses">
-							{{option.name}}
-						</option>
-					</select>
+					<template v-for="(playerId, index) in selectPlayers">
+						<select v-model="selectPlayers[index]" class="form-select">
+							<option v-for="option in unlockedPlayerOptions" :value="option.id" :class="option.addClasses">
+								{{option.name}}
+							</option>
+						</select>
+						<div v-if="index < selectPlayers.length - 1" class="my-2 fs-5 text-center">v.s.</div>
+					</template>
 				</div>
 				<div class="modal-footer">
 					<button @click="closeEditModal" type="button" class="btn btn-secondary">Cancel</button>
@@ -61,8 +58,7 @@ export default {
 		return {
 			roundNumber: null,
 			currentPairingId: null,
-			selectPlayer1: '',
-			selectPlayer2: ''
+			selectPlayers: []
 		};
 	},
 	created() {
@@ -82,41 +78,36 @@ export default {
 			if (!this.currentPairingId) return null;
 			return this.expandedPairings.find((elem) => (elem.pairingId === this.currentPairingId));
 		},
-		unlockedPlayerOptions1() {
-			return this.getUnlockedPlayerOptions(this.selectPlayer1, this.selectPlayer2);
-		},
-		unlockedPlayerOptions2() {
-			return this.getUnlockedPlayerOptions(this.selectPlayer2, this.selectPlayer1);
+		unlockedPlayerOptions() {
+			let ret = [];
+			for (let player of this.$store.getters.unlockedPlayers) {
+				ret.push({
+					id: player.id,
+					name: player.name
+				});
+			}
+			ret.push({
+				id: 'bye',
+				name: 'Bye',
+				addClasses: 'pname-bye pname-bye-color'
+			});
+			ret.push({
+				id: 'forfeit',
+				name: 'Forfeit',
+				addClasses: 'pname-forfeit pname-forfeit-color'
+			});
+			ret.push({
+				id: 'none',
+				name: 'None',
+				addClasses: 'pname-bye'
+			});
+			return ret;
 		},
 		canConfirmPairings() {
 			return !!this.$store.state.activeTournament.currentRound.pairingsValid;
 		}
 	},
 	methods: {
-		getUnlockedPlayerOptions(ownId, omitId) {
-			let ret = [];
-			for (let player of this.$store.getters.unlockedPlayers) {
-				if (omitId !== player.id) {
-					ret.push({
-						id: player.id,
-						name: player.name
-					});
-				}
-			}
-			if (omitId !== 'bye' && omitId !== 'forfeit') {
-				ret.push({
-					id: 'bye',
-					name: 'Bye',
-					addClasses: 'pname-bye pname-bye-color'
-				});
-				ret.push({
-					id: 'forfeit',
-					name: 'Forfeit',
-					addClasses: 'pname-forfeit pname-forfeit-color'
-				});
-			}
-			return ret;
-		},
 		clickPair: async function() {
 			await this.$store.dispatch('recalculatePairings');
 		},
@@ -132,8 +123,7 @@ export default {
 		openEditModal: function(pairingId) {
 			this.currentPairingId = pairingId;
 			let currentPairing = this.currentPairing;
-			this.selectPlayer1 = currentPairing.players[0].id;
-			this.selectPlayer2 = currentPairing.players[1].id;
+			this.selectPlayers = currentPairing.players.map((player) => player.id);
 			this.modalWrapper.show();
 		},
 		closeEditModal: function() {
@@ -141,20 +131,30 @@ export default {
 			this.modalWrapper.hide();
 		},
 		submitEditModal: async function() {
-			if (
-				!this.selectPlayer1 ||
-				!this.selectPlayer2 ||
-				(!isRealPlayerId(this.selectPlayer1) && !isRealPlayerId(this.selectPlayer2))
-			) {
-				return;
+			let setPlayerCount = 0;
+			let realPlayerCount = 0;
+			let realPlayerDedupe = {};
+			let isModified = false;
+			for (let i = 0; i < this.selectPlayers.length; i++) {
+				let playerId = this.selectPlayers[i];
+				if (playerId) setPlayerCount++;
+				if (isRealPlayerId(playerId)) {
+					realPlayerCount++;
+					if (!realPlayerDedupe[playerId]) realPlayerDedupe[playerId] = 0;
+					realPlayerDedupe[playerId]++;
+				}
+				if (playerId !== this.currentPairing.players[i].id) isModified = true;
 			}
-			if (
-				(this.selectPlayer1 !== this.currentPairing.players[0].id) ||
-				(this.selectPlayer2 !== this.currentPairing.players[1].id)
-			) {
+			if (setPlayerCount !== this.selectPlayers.length) return;
+			if (realPlayerCount === 0) return;
+			for (let playerId in realPlayerDedupe) {
+				if (realPlayerDedupe[playerId] > 1) return;
+			}
+
+			if (isModified) {
 				this.$store.commit('dirtyUpdatePairingPlayers', {
 					pairingId: this.currentPairing.pairingId,
-					playerIds: [ this.selectPlayer1, this.selectPlayer2 ]
+					playerIds: [ ...this.selectPlayers ]
 				});
 				await this.$store.dispatch('recalculatePairings');
 			} else {
