@@ -2,7 +2,7 @@
 <div class="pairing-card">
 	<div class="paired-players">
 		<template v-for="(player, index) in pairing.players">
-			<div class="ms-3 fs-5">
+			<div class="ms-3 py-2 fs-5">
 				<div class="d-inline player-name" :class="getPlayerClasses(player)">
 					{{player.name}}
 				</div>
@@ -63,11 +63,7 @@ export default {
 	emits: [ 'click-edit', 'click-lock', 'click-unlock', 'click-score' ],
 	computed: {
 		canScore() {
-			if (isRealPlayerId(this.pairing.players[0].id) && isRealPlayerId(this.pairing.players[1].id)) {
-				return true;
-			} else {
-				return false;
-			}
+			return this.pairing.canScore;
 		}
 	},
 	methods: {
@@ -77,7 +73,7 @@ export default {
 				ret.push('player-name-locked');
 			}
 
-			if (player.id === 'bye') {
+			if (player.id === 'bye' || player.id === 'none') {
 				ret.push('pname-bye')
 			} else if (player.id === 'forfeit') {
 				ret.push('pname-forfeit');

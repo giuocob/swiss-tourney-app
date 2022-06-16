@@ -155,6 +155,7 @@ function vuexConfig(appContext) {
 				if (pairing) {
 					pairing.wins = wins || pairing.playerIds.map((elem) => 0);
 					pairing.draws = draws || 0;
+					pairing.canScore = true;
 					// Handle trivial results like forfeits and byes
 					let pairingHasForfeit = !!pairing.playerIds.find((id) => (id === 'forfeit'));
 					let pairingRealPlayerCount = pairing.playerIds.reduce((sum, elem) => {
@@ -162,8 +163,9 @@ function vuexConfig(appContext) {
 						return sum;
 					}, 0);
 					if (pairingHasForfeit) {
-						// Empty (no wins for any player)
+						pairing.canScore = false;
 					} else if (pairingRealPlayerCount === 1) {
+						pairing.canScore = false;
 						pairing.winnerIndex = pairing.playerIds.findIndex((elem) => swiss.isRealPlayerId(elem));
 						pairing.wins[pairing.winnerIndex] = state.activeTournament.byeGamesAwarded;
 					} else if (wins) {
@@ -395,6 +397,7 @@ function vuexConfig(appContext) {
 						let ret = {
 							pairingId: pairing.pairingId,
 							locked: !!pairing.locked,
+							canScore: !!pairing.canScore,
 							wins: pairing.wins,
 							draws: pairing.draws,
 							winnerIndex: pairing.winnerIndex,
@@ -410,6 +413,7 @@ function vuexConfig(appContext) {
 							if (!player) return null;
 							return {
 								id: player.id,
+								index: index,
 								name: player.name,
 								standing: swiss.getPlayerStandingString(player),
 								wins: pairing.wins && pairing.wins[index]

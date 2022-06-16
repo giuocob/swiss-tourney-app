@@ -4,17 +4,11 @@
 			<div class="modal-content">
 				<div class="modal-body">
 					<div class="fs-4 mb-2">Game Result</div>
-					<div class="input-group mb-2">
+					<div v-for="player in currentPairingRealPlayers" class="input-group mb-2">
 						<span class="input-group-text">
-							{{this.currentPairing && this.currentPairing.players[0].name}}
+							{{player.name}}
 						</span>
-						<input v-model="currentPairingWins[0]" type="number" class="form-control numeric-small">
-					</div>
-					<div class="input-group mb-2">
-						<span class="input-group-text">
-							{{this.currentPairing && this.currentPairing.players[1].name}}
-						</span>
-						<input v-model="currentPairingWins[1]" type="number" class="form-control numeric-small">
+						<input v-model="currentPairingWins[player.index]" type="number" class="form-control numeric-small">
 					</div>
 					<div class="input-group">
 						<span class="input-group-text">Draw</span>
@@ -66,7 +60,7 @@ export default {
 		return {
 			roundNumber: null,
 			currentPairingId: null,
-			currentPairingWins: [ 0, 0 ],
+			currentPairingWins: [],
 			currentPairingDraws: 0
 		};
 	},
@@ -83,16 +77,24 @@ export default {
 	},
 	computed: {
 		...mapGetters([ 'expandedPairings' ]),
+		byeGamesAwarded() {
+			return this.$store.state.activeTournament.byeGamesAwarded;
+		},
 		currentPairing() {
 			if (!this.currentPairingId) return null;
 			return this.expandedPairings.find((elem) => (elem.pairingId === this.currentPairingId));
 		},
+		currentPairingRealPlayers() {
+			if (!this.currentPairing) return null;
+			return this.currentPairing.players.filter((elem) => isRealPlayerId(elem.id));
+		},
 		canSubmitModal() {
-			const MAX_WINS = 2;
-			if (!this.currentPairingWins[0] && !this.currentPairingWins[1] && !this.currentPairingDraws) {
-				return false;
+			let hasEntry = false;
+			for (let winVal of this.currentPairingWins) {
+				if (winVal > 0) hasEntry = true;
+				if (winVal > this.byeGamesAwarded) return false;
 			}
-			if (this.currentPairingWins[0] > MAX_WINS || this.currentPairingWins[1] > MAX_WINS) {
+			if (!hasEntry && !this.currentPairingDraws) {
 				return false;
 			}
 			return true;
@@ -129,7 +131,7 @@ export default {
 		openScoreModal: function(pairingId) {
 			this.currentPairingId = pairingId;
 			let currentPairing = this.currentPairing;
-			this.currentPairingWins = currentPairing.wins || [ 0, 0 ];
+			this.currentPairingWins = currentPairing.wins || currentPairing.playerIds.map((elem) => 0);
 			this.currentPairingDraws = currentPairing.draws || 0;
 			this.modalWrapper.show();
 		},
