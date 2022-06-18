@@ -40,7 +40,10 @@
 			</div>
 		</div>
 		<div class="d-block ms-2 my-3">
-			<button @click="clickCancel" class="btn btn-sm btn-danger d-block mt-3">Cancel round</button>
+			<div class="d-block mt-3">
+				<button @click="clickCancel" class="btn btn-sm btn-danger d-inline">Cancel round</button>
+				<button @click="clickExport" class="btn btn-sm btn-primary d-inline ms-5">Export CSV</button>
+			</div>
 			<button @click="clickCompleteRound" :disabled="!canCompleteRound" class="btn btn-lg btn-success d-block mt-4">
 				Complete Round
 			</button>
@@ -123,6 +126,9 @@ export default {
 					}
 				]
 			});
+		},
+		async clickExport() {
+			this.$store.dispatch('downloadRoundCsv', { roundNumber: 'currentRound' });
 		},
 		async clickCompleteRound() {
 			await this.$store.dispatch('completeRound');

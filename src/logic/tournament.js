@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import swiss from './swiss';
+import { exportRoundCsv } from './file-export';
 
 /*
 	Sample structure of tState:
@@ -383,6 +384,12 @@ function vuexConfig(appContext) {
 				}
 				commit('setLifecycle', { lifecycle: 'complete' });
 				await appContext.storageEngine.setActiveTournament(state.activeTournament);
+			},
+
+			downloadRoundCsv: async function({ commit, state, getters }, { roundNumber }) {
+				let tState = state.activeTournament;
+				let expandedPairings = getters.expandedPairingsByRound(roundNumber);
+				await exportRoundCsv(tState, expandedPairings, roundNumber);
 			}
 		},
 		getters: {
