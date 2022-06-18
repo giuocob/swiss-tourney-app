@@ -16,16 +16,18 @@ function getPlayerStandingString(playerObj) {
 
 function getRoundSettings(players, roundOptions) {
 	let playerCount = Object.keys(players).length;
-	let minPlayersPerRound, pairingSizes, byes
+	let minPlayersPerRound, pairingSizes, byes, mwpBound;
 	if (roundOptions.playersPerRound === 2) {
 		minPlayersPerRound = 2;
 		byes = playerCount % 2;
+		mwpBound = 0.33;
 		pairingSizes = [];
 		for (let i = 1; i < playerCount; i += 2) {
 			pairingSizes.push(2);
 		}
 	} else {
 		minPlayersPerRound = roundOptions.playersPerRound - 1;
+		mwpBound = 0.1;
 		pairingSizes = [];
 		let minPlayerPairingCount = Math.floor(playerCount / minPlayersPerRound);
 		let maxPlayerPairingCount = 0;
@@ -55,7 +57,13 @@ function getRoundSettings(players, roundOptions) {
 		}
 	}
 
-	return { playersPerRound: roundOptions.playersPerRound, minPlayersPerRound, pairingSizes, byes };
+	return {
+		playersPerRound: roundOptions.playersPerRound,
+		minPlayersPerRound,
+		pairingSizes,
+		byes,
+		mwpBound
+	};
 }
 
 
@@ -88,9 +96,10 @@ async function getNextPairings(prevRounds, players, roundOptions = {}) {
 	for (let round of prevRounds) {
 		for (let pairing of round.pairings) {
 			for (let currentPlayerIndex = 0; currentPlayerIndex < pairing.playerIds.length; currentPlayerIndex++) {
-				let currentPlayerId = round.pairings[currentPlayerId];
+				let currentPlayerId = pairing.playerIds[currentPlayerIndex];
+				if (!isRealPlayerId(currentPlayerId)) continue;
 				if (!playerByes[currentPlayerId]) playerByes[currentPlayerId] = 0;
-				let oppPlayerIds = round.pairings.filter((elem, i) => (i !== currentPlayerIndex));
+				let oppPlayerIds = pairing.playerIds.filter((elem, i) => (i !== currentPlayerIndex));
 				if (!playerOpponents[currentPlayerId]) playerOpponents[currentPlayerId] = {};
 				for (let oppPlayerId of oppPlayerIds) {
 					if (isRealPlayerId(oppPlayerId)) {
@@ -105,13 +114,29 @@ async function getNextPairings(prevRounds, players, roundOptions = {}) {
 		}
 	}
 
-	// Returns true if player pid has not had any player in pairing as an opponent
-	function canPair(pid, pairing) {
-		for (let oppId of pairing) {
-			if (!playerOpponents[pid] || !playerOpponents[oppId]) {
+	// Returns true if player can be added to the pairing under current aopt restrictions
+	function canPair(pid, pairing, aopts) {
+		if (aopts.allowAllRepeats) return true;
+		let repeatsByPlayer = {};
+		for (let playerId of [ pid, ...pairing ]) {
+			if (!playerOpponents[playerId]) {
 				throw new Error('Logical error in canPair');
 			}
-			if (playerOpponents[pid][oppId] || playerOpponents[oppId][pairing]) {
+			repeatsByPlayer[playerId] = 0;
+			for (let oppPlayerId of [ pid, ...pairing ]) {
+				if (!playerOpponents[oppPlayerId]) {
+					throw new Error('Logical error in canPair');
+				}
+				if (
+					playerOpponents[playerId][oppPlayerId] ||
+					playerOpponents[oppPlayerId][playerId]
+				) {
+					repeatsByPlayer[playerId] += 1;
+				}
+			}
+		}
+		for (let playerId in repeatsByPlayer) {
+			if (repeatsByPlayer[playerId] > (aopts.allowPartialRepeats || 0)) {
 				return false;
 			}
 		}
@@ -137,6 +162,7 @@ async function getNextPairings(prevRounds, players, roundOptions = {}) {
 			for (let sbattempt = 1; sbattempt <= ATTEMPTS_PER_BUCKET; sbattempt++) {
 				let currentBucket = shuffle([ ...scoreBuckets[sbi] ]);
 				let currentFloatPlayers = shuffle([ ...floatPlayers ]);
+				let bucketPairingSizes = [ ...pairingSizes ];
 				let bucketCPairs = [];
 				let failedToPair = [];
 				let bucketFail = false;
@@ -152,7 +178,7 @@ async function getNextPairings(prevRounds, players, roundOptions = {}) {
 					(roundSettings.byes > 0)
 				) {
 					for (let bi = allAvailablePlayers.length - 1; bi >= 0; bi--) {
-						let cPlayerId = currentBucket[bi];
+						let cPlayerId = allAvailablePlayers[bi];
 						if (!playerByes[cPlayerId] || aopts.allowMultipleByes) {
 							byePlayers.push(cPlayerId);
 							allAvailablePlayers.splice(bi, 1);
@@ -166,18 +192,16 @@ async function getNextPairings(prevRounds, players, roundOptions = {}) {
 
 				// Each iteration always removes 1 pid from allAvailablePlayers, OR clears currentPair
 				// to guarantee an element removal from the next one
-				while (pairingSizes[0] && (allAvailablePlayers.length + currentPair.length >= pairingSizes[0])) {
+				while (allAvailablePlayers.length + currentPair.length >= (bucketPairingSizes[0] || 0)) {
+					if (bucketPairingSizes.length === 0) break;
 					if (currentPair.length === 0) {
 						// Add first pid in line to start the pairing
-						if (pairingSizes.length === 0) {
-							throw new Error('Logical error in getNextPairings');
-						}
 						currentPair.push(allAvailablePlayers.shift());
 					} else {
 						// Look for a random player to fit the current pair
 						let didPair = false;
 						for (let cPid of shuffle([ ...allAvailablePlayers ])) {
-							if (canPair(cPid, currentPair) || aopts.allowRepeats) {
+							if (canPair(cPid, currentPair, aopts)) {
 								currentPair.push(cPid);
 								allAvailablePlayers = allAvailablePlayers.filter((elem) => (elem !== cPid));
 								didPair = true;
@@ -188,11 +212,12 @@ async function getNextPairings(prevRounds, players, roundOptions = {}) {
 							failedToPair.push(...currentPair);
 							currentPair = [];
 							bucketFail = true;
-						}
-						if (didPair && currentPair.length === pairingSizes[0]) {
+						} else if (didPair && currentPair.length === bucketPairingSizes[0]) {
 							bucketCPairs.push([ ...currentPair ]);
 							currentPair = [];
-							pairingSizes.shift();
+							bucketPairingSizes.shift();
+						} else {
+							// Do nothing (leave partial pairing for next loop iteration)
 						}
 					}
 				}
@@ -216,6 +241,7 @@ async function getNextPairings(prevRounds, players, roundOptions = {}) {
 						// Float all failed pairings down and hope for the best :)
 						floatPlayers = [ ...allAvailablePlayers, ...failedToPair ];
 						cPairs.push(...bucketCPairs);
+						pairingSizes = [ ...bucketPairingSizes ];
 						break;
 					}
 				} else {
@@ -225,6 +251,7 @@ async function getNextPairings(prevRounds, players, roundOptions = {}) {
 					}
 					floatPlayers = [ ...allAvailablePlayers ];
 					cPairs.push(...bucketCPairs);
+					pairingSizes = [ ...bucketPairingSizes ];
 					break;
 				}
 			}
@@ -258,28 +285,45 @@ async function getNextPairings(prevRounds, players, roundOptions = {}) {
 	// Attempt 10 pairs normally, then 10 allowing multiple byes, then 1 allowing anything
 	const ATTEMPTS_NORMAL = 10;
 	const ATTEMPTS_ALLOW_EXTRA_FLOATS = 10;
+	const ATTEMPTS_ALLOW_PARTIAL_REPEATS = 10;
 	const ATTEMPTS_MULTIPLE_BYES = 10;
 	const ATTEMPTS_ANYTHING = 1;
 	let retPairings;
+	let attemptOptions = {};
 	for (let i = 0; i < ATTEMPTS_NORMAL; i++) {
-		retPairings = attemptPair({});
+		retPairings = attemptPair({ ...attemptOptions });
 		if (retPairings) break;
 	}
 	if (!retPairings) {
+		attemptOptions.allowExtraFloats = true;
 		for (let i = 0; i < ATTEMPTS_ALLOW_EXTRA_FLOATS; i++) {
-			retPairings = attemptPair({ allowExtraFloats: true });
+			retPairings = attemptPair({ ...attemptOptions });
 			if (retPairings) break;
 		}
 	}
 	if (!retPairings) {
+		// In multiplayer tourneys, allow players to repeat one opponent per pod, then, two, etc,
+		// stopping just short of allowing a full pod repeat
+		for (let repeatCount = 1; repeatCount < roundSettings.playersPerRound - 1; repeatCount++) {
+			attemptOptions.allowPartialRepeats = repeatCount;
+			for (let i = 0; i < ATTEMPTS_ALLOW_PARTIAL_REPEATS; i++) {
+				retPairings = attemptPair({ ...attemptOptions });
+				if (retPairings) break;
+			}
+			if (retPairings) break;
+		}
+	}
+	if (!retPairings) {
+		attemptOptions.allowMultipleByes = true;
 		for (let i = 0; i < ATTEMPTS_MULTIPLE_BYES; i++) {
-			retPairings = attemptPair({ allowExtraFloats: true, allowMultipleByes: true });
+			retPairings = attemptPair({ ...attemptOptions });
 			if (retPairings) break;
 		}
 	}
 	if (!retPairings) {
+		attemptOptions.allowAllRepeats = true;
 		for (let i = 0; i < ATTEMPTS_ANYTHING; i++) {
-			retPairings = attemptPair({ allowExtraFloats: true, allowMultipleByes: true, allowRepeats: true });
+			retPairings = attemptPair({ ...attemptOptions });
 			if (retPairings) break;
 		}
 	}
@@ -297,7 +341,12 @@ function roundTiebreak(num) {
 	return Math.floor(num * 1000) / 1000;
 }
 
-function calculateStandings(rounds, players) {
+function calculateStandings(rounds, players, roundOptions) {
+	roundOptions = {
+		playersPerRound: roundOptions.playersPerRound || 2
+	};
+	let roundSettings = getRoundSettings(players, roundOptions);
+
 	let scores = {};
 	let opponents = {};
 	for (let playerId in players) {
@@ -310,9 +359,9 @@ function calculateStandings(rounds, players) {
 				matchPointsAvailable: 0,
 				gamePoints: 0,
 				gamePointsAvailable: 0,
-				mwp: 0.33,
+				mwp: roundSettings.mwpBound,
 				omwp: 0,
-				gwp: 0.33,
+				gwp: roundSettings.mwpBound,
 				ogwp: 0
 			}
 			opponents[playerId] = [];
@@ -321,27 +370,33 @@ function calculateStandings(rounds, players) {
 
 	for (let round of rounds) {
 		for (let pairing of round.pairings) {
-			let gamesPlayed = pairing.wins[0] + pairing.wins[1] + pairing.draws;
-			for (let [ ownIndex, oppIndex ] of [ [ 0, 1 ], [ 1, 0 ] ]) {
-				let ownId = pairing.playerIds[ownIndex], oppId = pairing.playerIds[oppIndex];
+			let gamesPlayed = pairing.wins.reduce((acc, elem) => acc + elem, 0);
+			for (let i = 0; i < pairing.playerIds.length; i++) {
+				let ownId = pairing.playerIds[i];
 				if (!isRealPlayerId(ownId)) continue;
 				if (!scores[ownId]) {
 					throw new Error('Unknown playerId: ' + ownId);
 				}
-				opponents[ownId].push(oppId);
-				if (oppId === 'forfeit') continue;
-
+				for (let k = 0; k < pairing.playerIds.length; k++) {
+					let oppId = pairing.playerIds[k];
+					if (i !== k) opponents[ownId].push(oppId);
+				}
 				scores[ownId].matchPointsAvailable += 3;
 				scores[ownId].gamePointsAvailable += (3 * gamesPlayed);
-				scores[ownId].gamePoints += ((3 * pairing.wins[ownIndex]) + pairing.draws);
-				if (pairing.winnerIndex === ownIndex) {
+				scores[ownId].gamePoints += ((3 * pairing.wins[i]) + pairing.draws);
+				if (typeof pairing.winnerIndex !== 'number') {
+					// Round is somehow unscored, so ignore
+				} else if (pairing.winnerIndex === i) {
+					// Player is round winner
 					scores[ownId].wins += 1;
 					scores[ownId].matchPoints += 3;
-				} else if (pairing.winnerIndex === oppIndex) {
-					scores[ownId].losses += 1;
 				} else if (pairing.winnerIndex === -1) {
+					// Round is a draw
 					scores[ownId].draws += 1;
 					scores[ownId].matchPoints += 1;
+				} else {
+					// Player is round loser
+					scores[ownId].losses += 1;
 				}
 			}
 		}
@@ -354,13 +409,13 @@ function calculateStandings(rounds, players) {
 		} else {
 			scoreObj.mwp = roundTiebreak(scoreObj.matchPoints / scoreObj.matchPointsAvailable);
 		}
-		if (scoreObj.mwp < 0.33) scoreObj.mwp = 0.33;
+		if (scoreObj.mwp < roundSettings.mwpBound) scoreObj.mwp = roundSettings.mwpBound;
 		if (scoreObj.gamePointsAvailable === 0) {
 			scoreObj.gwp = 0;
 		} else {
 			scoreObj.gwp = roundTiebreak(scoreObj.gamePoints / scoreObj.gamePointsAvailable);
 		}
-		if (scoreObj.gwp < 0.33) scoreObj.gwp = 0.33;
+		if (scoreObj.gwp < roundSettings.mwpBound) scoreObj.gwp = roundSettings.mwpBound;
 	}
 
 	for (let playerId in scores) {

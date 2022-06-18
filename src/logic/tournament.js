@@ -264,7 +264,12 @@ function vuexConfig(appContext) {
 			startTournament: async function({ commit, state }) {
 				let tState = state.activeTournament;
 				commit('preparePlayers');
-				commit('setScores', { scores: swiss.calculateStandings([], tState.players) });
+				let standings = swiss.calculateStandings(
+					[],
+					tState.players,
+					{ playersPerRound: tState.playersPerRound }
+				)
+				commit('setScores', { scores: standings });
 				let pairings = await swiss.getNextPairings(
 					[],
 					tState.players,
@@ -343,7 +348,11 @@ function vuexConfig(appContext) {
 				if (tState.currentRound && includeCurrentRound) {
 					allRounds.push(tState.currentRound);
 				}
-				let newStandings = swiss.calculateStandings(allRounds, tState.players);
+				let newStandings = swiss.calculateStandings(
+					allRounds,
+					tState.players,
+					{ playersPerRound: tState.playersPerRound }
+				);
 				commit('setScores', { scores: newStandings });
 				await appContext.storageEngine.setActiveTournament(state.activeTournament);
 			},
