@@ -11,7 +11,6 @@
 
 <script>
 import { mapGetters } from 'vuex';
-import ParticipantDisplay from '../participant-display.vue';
 import { currentTournamentLink } from '../../logic/routes';
 
 export default {
@@ -60,7 +59,6 @@ export default {
 			let tState = this.$store.state.activeTournament;
 			this.$router.push(currentTournamentLink(tState));
 		}
-	},
-	components: { ParticipantDisplay }
+	}
 };
 </script>

@@ -20,17 +20,18 @@
 
 <div class="mx-3 mt-4 player-entry">
 	<div v-for="player in playerArray" class="d-flex flex-row bg-primary mb-3 py-2 shadow"
-		:class="isDropped(player) ? 'bg-danger' : 'bg-primary'" :key="player.id"
+		:class="getPlayerBGClasses(player)"
 	>
-		<h4 class="flex-fill text-break ps-3 mb-0" :class="isDropped(player) ? 'pname-dropped' : ''">
+		<h4 class="flex-fill text-break ps-3 mb-0" :class="getPlayerClasses(player)">
 			{{player.name}}
 		</h4>
-		<button v-if="!isDropped(player) && (lifecycle === 'in-progress')"
+		<button v-if="playerIsActive(player) && (lifecycle === 'in-progress')"
 			@click="clickDropPlayer(player.id, $event)" class="btn btn-danger mx-3"
 		>
 			DROP
 		</button>
-		<h6 v-else-if="isDropped(player)" class="pe-2 mb-0 pname-dropped">DROPPED</h6>
+		<h6 v-else-if="player.status === 'dropped'" class="pe-2 mb-0 pname-dropped">DROPPED</h6>
+		<h6 v-else-if="player.status === 'eliminated'" class="pe-2 mb-0 pname-dropped">ELIMINATED</h6>
 	</div>
 	<button v-if="lifecycle === 'in-progress'" @click="clickAddLatecomer" class="btn btn-warning mt-4">
 		Add Latecomer
@@ -59,14 +60,22 @@ export default {
 	},
 	computed: {
 		playerArray() {
+			let statusSortMap = {
+				active: 4,
+				eliminated: 3,
+				dropped: 2,
+				setup: 1
+			};
 			let tState = this.$store.state.activeTournament;
 			if (!tState) return [];
 			return Object.keys(tState.players || {})
 				.sort((a, b) => {
 					let statusA = tState.players[a].status;
+					let statusAVal = statusSortMap[statusA] || 0;
 					let statusB = tState.players[b].status;
-					if (statusA === 'active' && statusB !== 'active') return -1;
-					if (statusA !== 'active' && statusB === 'active') return 1;
+					let statusBVal = statusSortMap[statusB] || 0;
+					if (statusAVal > statusBVal) return -1;
+					if (statusAVal < statusBVal) return 1;
 					if (a < b) return -1;
 					if (a > b) return 1;
 					return 0;
@@ -82,8 +91,20 @@ export default {
 		}
 	},
 	methods: {
-		isDropped: function(player) {
-			return (player.status === 'dropped');
+		getPlayerClasses(player) {
+			if (player.status === 'active' || player.status === 'setup') return [ 'bg-primary' ];
+			if (player.status === 'dropped' || player.status === 'eliminated') return [ 'pname-dropped' ];
+			return [];
+		},
+		getPlayerBGClasses(player) {
+			if (player.status === 'active' || player.status === 'setup') return [ 'bg-primary' ];
+			if (player.status === 'eliminated') return [ 'bg-warning' ];
+			if (player.status === 'dropped') return [ 'bg-danger' ];
+			return [];
+		},
+		playerIsActive(player) {
+			if (player.status === 'active' || player.status === 'setup') return true;
+			return false;
 		},
 		clickAddLatecomer: function() {
 			this.modalWrapper.show();

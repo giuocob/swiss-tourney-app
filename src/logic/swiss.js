@@ -15,7 +15,10 @@ function getPlayerStandingString(playerObj) {
 }
 
 function getRoundSettings(players, roundOptions) {
-	let playerCount = Object.keys(players).length;
+	let playerCount = Object.values(players).reduce((acc, elem) => {
+		if (elem.status === 'active') return acc + 1;
+		return acc;
+	}, 0);
 	let minPlayersPerRound, pairingSizes, byes, mwpBound;
 	if (roundOptions.playersPerRound === 2) {
 		minPlayersPerRound = 2;
@@ -337,6 +340,27 @@ async function getNextPairings(prevRounds, players, roundOptions = {}) {
 }
 
 
+// Get the set of players that need to be marked eliminated at the end of a round.
+// Assumes player scores are up to date.
+function getEliminatedPlayers(players, elimThreshold) {
+	let elimPlayers = [];
+	if (!elimThreshold || elimThreshold <=0) return elimPlayers;
+	let maxMatchPoints = 0;
+	for (let player of Object.values(players)) {
+		if ((player?.scores?.matchPoints || 0) > maxMatchPoints) {
+			maxMatchPoints = player.scores.matchPoints;
+		}
+	}
+	for (let playerId in players) {
+		let player = players[playerId];
+		if ((player?.scores?.matchPoints || 0) <= (maxMatchPoints - elimThreshold)) {
+			elimPlayers.push(playerId);
+		}
+	}
+	return elimPlayers;
+}
+
+
 function roundTiebreak(num) {
 	return Math.floor(num * 1000) / 1000;
 }
@@ -456,7 +480,10 @@ function calculateStandings(rounds, players, roundOptions) {
 	});
 	let currentRank = 1;
 	for (let playerId of sortedPlayerIds) {
-		if (isRealPlayerId(playerId) && (players[playerId].status === 'active')) {
+		if (
+			isRealPlayerId(playerId) &&
+			((players[playerId].status === 'active') || (players[playerId].status === 'eliminated'))
+		) {
 			scores[playerId].rank = currentRank;
 			currentRank++;
 		}
@@ -476,5 +503,6 @@ export default {
 	getPlayerStandingString,
 	getRoundSettings,
 	getNextPairings,
+	getEliminatedPlayers,
 	calculateStandings
 };

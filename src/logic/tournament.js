@@ -80,10 +80,16 @@ function vuexConfig(appContext) {
 				let player = tState.players[playerId];
 				if (player) player.status = 'dropped';
 			},
-			setOptions(state, { maxRounds, playersPerRound, byeGamesAwarded }) {
+			setPlayerEliminated(state, { playerId }) {
+				let tState = state.activeTournament;
+				let player = tState.players[playerId];
+				if (player) player.status = 'eliminated';
+			},
+			setOptions(state, { maxRounds, playersPerRound, byeGamesAwarded, matchPointElimThreshold }) {
 				state.activeTournament.maxRounds = maxRounds;
 				state.activeTournament.playersPerRound = playersPerRound;
 				state.activeTournament.byeGamesAwarded = byeGamesAwarded;
+				state.activeTournament.matchPointElimThreshold = matchPointElimThreshold;
 			},
 			preparePlayers(state) {
 				for (let player of Object.values(state.activeTournament.players)) {
@@ -258,8 +264,11 @@ function vuexConfig(appContext) {
 				});
 				await appContext.storageEngine.setActiveTournament(state.activeTournament);
 			},
-			setupSetOptions: async function({ commit, state }, { maxRounds, playersPerRound, byeGamesAwarded }) {
-				commit('setOptions', { maxRounds, playersPerRound, byeGamesAwarded });
+			setupSetOptions: async function(
+				{ commit, state },
+				{ maxRounds, playersPerRound, byeGamesAwarded, matchPointElimThreshold }
+			) {
+				commit('setOptions', { maxRounds, playersPerRound, byeGamesAwarded, matchPointElimThreshold });
 				await appContext.storageEngine.setActiveTournament(state.activeTournament);
 			},
 			startTournament: async function({ commit, state }) {
@@ -367,6 +376,10 @@ function vuexConfig(appContext) {
 			setupNextRound: async function({ commit, state }) {
 				let tState = state.activeTournament;
 				if (tState.roundLifecycle !== 'complete') throw new Error('Invalid dispatch of setupNextRound');
+				let elimPlayers = swiss.getEliminatedPlayers(tState.players, tState.matchPointElimThreshold);
+				for (let playerId of elimPlayers) {
+					commit('setPlayerEliminated', { playerId });
+				}
 				let pairings = await swiss.getNextPairings(
 					tState.rounds,
 					tState.players,
