@@ -79,6 +79,9 @@ function vuexConfig(appContext) {
 				let tState = state.activeTournament;
 				let player = tState.players[playerId];
 				if (player) player.status = 'dropped';
+				if (tState.currentRound && tState.roundLifecycle === 'setup') {
+					tState.currentRound.pairingsValid = false;
+				}
 			},
 			setPlayerEliminated(state, { playerId }) {
 				let tState = state.activeTournament;
@@ -231,6 +234,7 @@ function vuexConfig(appContext) {
 				await appContext.storageEngine.setActiveTournament(state.activeTournament);
 			},
 			activeAddPlayer: async function({ commit, state, dispatch }, payload) {
+				let tState = state.activeTournament;
 				if (state.activeTournament.lifecycle !== 'in-progress') {
 					throw new Error('Invalid dispatch of activeAddPlayer');
 				}
@@ -242,6 +246,11 @@ function vuexConfig(appContext) {
 				}
 				commit('activeAddPlayer', payload);
 				await dispatch('recalculateStandings', {});
+				// Check if player is eliminated by default
+				let elimPlayers = swiss.getEliminatedPlayers(tState.players, tState.matchPointElimThreshold);
+				for (let playerId of elimPlayers) {
+					commit('setPlayerEliminated', { playerId });
+				}
 				await appContext.storageEngine.setActiveTournament(state.activeTournament);
 			},
 			setupDeletePlayer: async function({ commit, state }, payload) {

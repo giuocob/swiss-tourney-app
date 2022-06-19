@@ -353,6 +353,7 @@ function getEliminatedPlayers(players, elimThreshold) {
 	}
 	for (let playerId in players) {
 		let player = players[playerId];
+		if (player.status !== 'active') continue;
 		if ((player?.scores?.matchPoints || 0) <= (maxMatchPoints - elimThreshold)) {
 			elimPlayers.push(playerId);
 		}
