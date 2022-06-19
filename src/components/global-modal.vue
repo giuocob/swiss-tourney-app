@@ -46,6 +46,7 @@ export default {
 		this.bm = new Modal(md);
 		this.bmShown = false;
 		md.addEventListener('hidden.bs.modal', () => {
+			this.$store.commit('hideGlobalModal');
 			// Reinstate the fade class if we removed it
 			md.classList.add('fade');
 		});
