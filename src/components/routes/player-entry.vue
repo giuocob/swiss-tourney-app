@@ -8,7 +8,7 @@
 			<div class="d-flex flex-row bg-success py-2" key="inputLiKey">
 				<input v-model="inputName" ref="entryText" type="text" class="transparent-input flex-fill">
 				<button @click="addPlayer" class="input-group-btn btn btn-warning mx-3"
-					data-bs-toggle="button" :disabled="inputName.length === 0"
+					data-bs-toggle="button"
 				>
 					ADD
 				</button>
