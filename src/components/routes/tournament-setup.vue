@@ -29,7 +29,7 @@
 import { checkRedirect } from '../../logic/routes';
 
 const ROUND_TYPES = [
-	{ id: 'normal', label: 'Normal', playersPerRound: 2, byeGanesAwarded: 2 },
+	{ id: 'normal', label: 'Normal', playersPerRound: 2, byeGamesAwarded: 2 },
 	{ id: 'commander', label: 'Commander', playersPerRound: 4, byeGamesAwarded: 1 }
 ];
 
