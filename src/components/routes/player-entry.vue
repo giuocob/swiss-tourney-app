@@ -7,7 +7,11 @@
 		<div class="mb-5">
 			<div class="d-flex flex-row bg-success py-2" key="inputLiKey">
 				<input v-model="inputName" ref="entryText" type="text" class="transparent-input flex-fill">
-				<button @click="addPlayer" class="input-group-btn btn btn-warning mx-3" data-bs-toggle="button">ADD</button>
+				<button @click="addPlayer" class="input-group-btn btn btn-warning mx-3"
+					data-bs-toggle="button" :disabled="inputName.length === 0"
+				>
+					ADD
+				</button>
 			</div>
 			<p v-if="invalidMessage" class="fs-6 text-danger">{{invalidMessage}}</p>
 		</div>
@@ -68,6 +72,9 @@
 			inputName: function() {
 				this.invalidMessage = '';
 			}
-		}
+		},
+		mounted() {
+			this.$refs.entryText.focus();
+		},
 	};
 </script>

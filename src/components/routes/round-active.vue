@@ -8,11 +8,13 @@
 						<span class="input-group-text">
 							{{player.name}}
 						</span>
-						<input v-model="currentPairingWins[player.index]" type="number" class="form-control numeric-small">
+						<input v-model="currentPairingWins[player.index]" @focus="$event.target.select()"
+							type="number" class="form-control numeric-small">
 					</div>
 					<div class="input-group">
 						<span class="input-group-text">Draw</span>
-						<input v-model="currentPairingDraws" type="number" class="form-control numeric-small">
+						<input v-model="currentPairingDraws" @focus="$event.target.select()"
+							type="number" class="form-control numeric-small">
 					</div>
 				</div>
 				<div class="modal-footer">
