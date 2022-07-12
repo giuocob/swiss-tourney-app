@@ -1,6 +1,16 @@
 import { createObjectCsvStringifier } from 'csv-writer';
 import swiss from './swiss';
 
+async function downloadFile(filename, fileData) {
+	let e = document.createElement('a');
+	e.setAttribute('href', 'data:text/csv;charset=utf8,' + encodeURIComponent(fileData));
+	e.setAttribute('download', filename);
+	e.style.display = 'none';
+	document.body.appendChild(e);
+	e.click();
+	document.body.removeChild(e);
+}
+
 async function exportRoundCsv(tState, expandedPairings, roundNumber) {
 	let roundNumberStr = '' + ((roundNumber === 'currentRound') ? tState.currentRoundNumber : roundNumber);
 	let nameHeaders = [], winHeaders = []
@@ -11,12 +21,16 @@ async function exportRoundCsv(tState, expandedPairings, roundNumber) {
 		winHeaders.push({ id: wins, title: wins });
 	}
 	let headers = [
+		{ id: 'tableNumber', title: 'tableNumber' },
 		...nameHeaders,
 		...winHeaders,
 		{ id: 'draws', title: 'draws' }
 	];
 	let records = expandedPairings.map((pairing) => {
-		let record = { draws: pairing.draws || 0};
+		let record = {
+			tableNumber: pairing.tableNumber,
+			draws: pairing.draws || 0
+		};
 		for (let i = 0; i < pairing.players.length; i++) {
 			let playerName = pairing.players[i].name;
 			if (!swiss.isRealPlayerId(pairing.players[i].id)) {
@@ -31,15 +45,7 @@ async function exportRoundCsv(tState, expandedPairings, roundNumber) {
 	let csvStringifier = createObjectCsvStringifier({ header: headers });
 	let csvData = `${csvStringifier.getHeaderString()}${csvStringifier.stringifyRecords(records)}`;
 	let csvFilename = `round_${roundNumberStr}_pairings.csv`;
-
-	// Make fake DOM element to trigger download
-	let e = document.createElement('a');
-	e.setAttribute('href', 'data:text/csv;charset=utf8,' + encodeURIComponent(csvData));
-	e.setAttribute('download', csvFilename);
-	e.style.display = 'none';
-	document.body.appendChild(e);
-	e.click();
-	document.body.removeChild(e);
+	await downloadFile(csvFilename, csvData);
 }
 
 export { exportRoundCsv };

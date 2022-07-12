@@ -114,9 +114,12 @@ function vuexConfig(appContext) {
 				tState.roundLifecycle = 'setup';
 			},
 			setPairings(state, { pairings, pairingsValid }) {
+				let tableNumber = 1;
 				for (let pairing of pairings) {
 					pairing.pairingId = state.activeTournament.currentPairingId;
 					state.activeTournament.currentPairingId += 1;
+					pairing.tableNumber = tableNumber;
+					tableNumber++;
 				}
 				state.activeTournament.currentRound.pairings = pairings;
 				state.activeTournament.currentRound.pairingsValid = pairingsValid;
@@ -434,6 +437,7 @@ function vuexConfig(appContext) {
 					let ep = pairings.map((pairing) => {
 						let ret = {
 							pairingId: pairing.pairingId,
+							tableNumber: pairing.tableNumber,
 							locked: !!pairing.locked,
 							canScore: !!pairing.canScore,
 							wins: pairing.wins,

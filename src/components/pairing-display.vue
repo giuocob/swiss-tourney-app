@@ -1,4 +1,7 @@
 <template>
+<div class="table-number fs-5 pt-2 ms-2 fw-bold">
+	Table {{pairing.tableNumber}}
+</div>
 <div class="pairing-card">
 	<div class="paired-players">
 		<template v-for="(player, index) in pairing.players">
