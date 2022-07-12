@@ -43,12 +43,13 @@
 		</div>
 		<div class="d-block ms-2 my-3">
 			<div class="d-block mt-3">
-				<button @click="clickCancel" class="btn btn-sm btn-danger d-inline">Cancel round</button>
-				<button @click="clickExport" class="btn btn-sm btn-primary d-inline ms-5">Export CSV</button>
+				<button @click="clickExportPairingSlips" class="btn btn-sm btn-primary d-inline">Pairing Slips</button>
+				<button @click="clickExportCsv" class="btn btn-sm btn-primary d-inline ms-5">CSV Export</button>
 			</div>
-			<button @click="clickCompleteRound" :disabled="!canCompleteRound" class="btn btn-lg btn-success d-block mt-4">
+			<button @click="clickCompleteRound" :disabled="!canCompleteRound" class="btn btn-lg btn-success d-block mt-5">
 				Complete Round
 			</button>
+			<button @click="clickCancel" class="btn btn-sm btn-danger d-inline mt-5">Cancel round</button>
 		</div>
 	</div>
 </template>
@@ -129,7 +130,10 @@ export default {
 				]
 			});
 		},
-		async clickExport() {
+		async clickExportPairingSlips() {
+			this.$store.dispatch('downloadRoundPairingSlips', { roundNumber: 'currentRound' });
+		},
+		async clickExportCsv() {
 			this.$store.dispatch('downloadRoundCsv', { roundNumber: 'currentRound' });
 		},
 		async clickCompleteRound() {
