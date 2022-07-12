@@ -47,20 +47,46 @@ async function downloadRoundCsv(tState, expandedPairings, roundNumber) {
 }
 
 async function downloadRoundPairingSlipsPdf(tState, expandedPairings, roundNumber) {
-	const pdfDoc = await PDFDocument.create();
-	const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
-	const page = pdfDoc.addPage();
-	const { width, height } = page.getSize();
-	const fontSize = 30;
-	page.drawText('Creating PDFs in JavaScript is awesome!', {
-	  x: 50,
-	  y: height - 4 * fontSize,
-	  size: fontSize,
-	  font: timesRomanFont,
-	  color: rgb(0, 0.53, 0.71),
-	});
-	let pdfBytes = await pdfDoc.save();
+	const SLIPS_PER_PAGE = 4;
+	const FONT_SIZE = 16;
+	const LINE_SPACING = FONT_SIZE * 1.2;
+	const X_MARGIN = 50;
+	const BLOCK_Y_MARGIN = 30;
 
+	let pdfDoc = await PDFDocument.create();
+	let pdfFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+	let currentPage = pdfDoc.addPage();
+	let { width, height } = currentPage.getSize();
+	let currentPagePos = 0;
+
+	for (let pairing of expandedPairings) {
+		if (!pairing.canScore) continue;
+		if (currentPagePos >= SLIPS_PER_PAGE) {
+			currentPagePos = 0;
+			currentPage = pdfDoc.addPage();
+		}
+		let blockTopMarker = height - (height * currentPagePos / SLIPS_PER_PAGE);
+		let blockBottomMarker = height - (height * (currentPagePos + 1) / SLIPS_PER_PAGE);
+		let [ blockYStart, blockYEnd ] = [ blockTopMarker - BLOCK_Y_MARGIN, blockBottomMarker + BLOCK_Y_MARGIN ];
+		let currentBlockPos = 0;
+		for (let player of pairing.players) {
+			let playerName = player.name;
+			if (!swiss.isRealPlayerId(player.id)) {
+				playerName = `(${playerName})`;
+			}
+			currentPage.drawText(playerName, {
+				x: X_MARGIN,
+				y: blockYStart - currentBlockPos * LINE_SPACING,
+				size: FONT_SIZE,
+				font: pdfFont,
+				color: rgb(0, 0, 0)
+			});
+			currentBlockPos++;
+		}
+		currentPagePos++;
+	}
+
+	let pdfBytes = await pdfDoc.save();
 	let blob = new Blob([ pdfBytes ], { type: 'application/pdf' });
 	let e = document.createElement('a');
 	e.setAttribute('href', window.URL.createObjectURL(blob));
