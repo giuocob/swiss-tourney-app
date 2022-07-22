@@ -335,7 +335,7 @@ async function getNextPairings(prevRounds, players, roundOptions = {}) {
 	}
 
 	return retPairings.map((p) => {
-		return { playerIds: p };
+		return { playerIds: shuffle([ ...p ])};
 	});
 }
 
