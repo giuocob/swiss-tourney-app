@@ -1,7 +1,7 @@
 <template>
 	<div class="mx-3 mt-4 player-entry">
-		<div v-for="player in players" class="d-flex flex-row bg-primary mb-3 py-2 shadow" :key="player.id">
-			<h4 class="flex-fill text-break ps-3 mb-0">{{player.name}}</h4>
+		<div v-for="(player, index) in players" class="d-flex flex-row bg-primary mb-3 py-2 shadow" :key="player.id">
+			<h4 class="flex-fill text-break ps-3 mb-0">{{`${index + 1}: ${player.name}`}}</h4>
 			<button @click="deletePlayer(player.id, $event)" class="btn btn-danger mx-3">DELETE</button>
 		</div>
 		<div class="mb-5">

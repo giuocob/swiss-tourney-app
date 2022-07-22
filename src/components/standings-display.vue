@@ -47,8 +47,9 @@ export default {
 	computed: {
 		sortedPlayers() {
 			return Object.values(this.$store.state.activeTournament.players).sort((a, b) => {
-				if (a.scores.rank < b.scores.rank) return -1;
-				if (a.scores.rank > b.scores.rank) return 1;
+				let aRank = a.scores.rank || -1, bRank = b.scores.rank || -1;
+				if (aRank < bRank) return -1;
+				if (aRank > bRank) return 1;
 				if (a.id < b.id) return -1;
 				if (a.id > b.id) return 1;
 				return 0;
