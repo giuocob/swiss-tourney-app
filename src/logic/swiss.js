@@ -269,10 +269,12 @@ async function getNextPairings(prevRounds, players, roundOptions = {}) {
 				if (pairingSizes.length > 0) {
 					throw new Error('Logical error in getNextPairings');
 				}
-				for (let cPair of cPairs) {
+				for (let i = 0; i < cPairs.length; i++) {
+					let cPair = shuffle([ ...cPairs[i] ]);
 					while (cPair.length < roundSettings.playersPerRound) {
 						cPair.push('none');
 					}
+					cPairs[i] = cPair;
 				}
 				for (let byePlayerId of byePlayers) {
 					let byePair = [ byePlayerId ];
@@ -335,7 +337,7 @@ async function getNextPairings(prevRounds, players, roundOptions = {}) {
 	}
 
 	return retPairings.map((p) => {
-		return { playerIds: shuffle([ ...p ])};
+		return { playerIds: p };
 	});
 }
 
