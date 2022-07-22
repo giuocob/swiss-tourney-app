@@ -101,6 +101,7 @@ async function downloadRoundPairingSlipsPdf(tState, expandedPairings, roundNumbe
 	const BLOCK_Y_MARGIN = 30;
 
 	let roundNumberStr = '' + ((roundNumber === 'currentRound') ? tState.currentRoundNumber : roundNumber);
+	let filename = `round_${roundNumberStr}_slips.pdf`;
 	let pdfDoc = await PDFDocument.create();
 	let pdfFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
 	let currentPage = pdfDoc.addPage();
@@ -149,7 +150,7 @@ async function downloadRoundPairingSlipsPdf(tState, expandedPairings, roundNumbe
 	let blob = new Blob([ pdfBytes ], { type: 'application/pdf' });
 	let e = document.createElement('a');
 	e.setAttribute('href', window.URL.createObjectURL(blob));
-	e.setAttribute('download', 'test.pdf');
+	e.setAttribute('download', filename);
 	e.style.display = 'none';
 	document.body.appendChild(e);
 	e.click();
