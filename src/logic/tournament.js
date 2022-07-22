@@ -1,6 +1,10 @@
 import _ from 'lodash';
 import swiss from './swiss';
-import { downloadRoundCsv, downloadRoundPairingSlipsPdf } from './file-export';
+import {
+	downloadStandingsCsv,
+	downloadRoundCsv,
+	downloadRoundPairingSlipsPdf
+} from './file-export';
 
 /*
 	Sample structure of tState:
@@ -420,6 +424,10 @@ function vuexConfig(appContext) {
 				let tState = state.activeTournament;
 				let expandedPairings = getters.expandedPairingsByRound(roundNumber);
 				await downloadRoundCsv(tState, expandedPairings, roundNumber, false);
+			},
+			downloadStandingsCsv: async function({ commit, state, getters }) {
+				let tState = state.activeTournament;
+				await downloadStandingsCsv(tState);
 			}
 		},
 		getters: {

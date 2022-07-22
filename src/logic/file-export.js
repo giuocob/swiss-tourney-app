@@ -2,6 +2,52 @@ import { createObjectCsvStringifier } from 'csv-writer';
 import swiss from './swiss';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 
+async function downloadStandingsCsv(tState) {
+	let filename = '';
+	if (tState.lifecycle === 'complete') {
+		filename = 'final_standings.csv';
+	} else if (tState.currentRoundNumber === 1) {
+		filename = 'initial_standings.csv';
+	} else {
+		filename = `standings_after_round_${tState.currentRoundNumber - 1}.csv`;
+	}
+	let headers = [
+		{ id: 'rank', title: 'Rank' },
+		{ id: 'name', title: 'Name' },
+		{ id: 'score', title: 'Score' },
+		{ id: 'omwp', title: 'OMW' },
+		{ id: 'gwp', title: 'GW' },
+		{ id: 'ogwp', title: 'OGW' }
+	];
+	let records = Object.values(tState.players)
+		.sort((a, b) => {
+				let aRank = a.scores.rank || -1, bRank = b.scores.rank || -1;
+				if (aRank < bRank) return -1;
+				if (aRank > bRank) return 1;
+				if (a.id < b.id) return -1;
+				if (a.id > b.id) return 1;
+				return 0;
+			})
+			.filter((player) => ((player.status === 'active') || (player.status === 'eliminated')))
+			.map((player) => {
+				return {
+					name: player.name,
+					score: swiss.getPlayerStandingString(player),
+					...(player.scores || {})
+				};
+			});
+
+	let csvStringifier = createObjectCsvStringifier({ header: headers });
+	let csvData = `${csvStringifier.getHeaderString()}${csvStringifier.stringifyRecords(records)}`;
+	let e = document.createElement('a');
+	e.setAttribute('href', 'data:text/csv;charset=utf8,' + encodeURIComponent(csvData));
+	e.setAttribute('download', filename);
+	e.style.display = 'none';
+	document.body.appendChild(e);
+	e.click();
+	document.body.removeChild(e);
+}
+
 async function downloadRoundCsv(tState, expandedPairings, roundNumber, includeScores) {
 	let roundNumberStr = '' + ((roundNumber === 'currentRound') ? tState.currentRoundNumber : roundNumber);
 	let nameHeaders = [], winHeaders = []
@@ -110,4 +156,4 @@ async function downloadRoundPairingSlipsPdf(tState, expandedPairings, roundNumbe
 	document.body.removeChild(e);
 }
 
-export { downloadRoundCsv, downloadRoundPairingSlipsPdf };
+export { downloadRoundCsv, downloadStandingsCsv, downloadRoundPairingSlipsPdf };

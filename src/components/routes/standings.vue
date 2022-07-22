@@ -5,6 +5,11 @@
 	</div>
 	<standings-display players="players"></standings-display>
 </div>
+<div class="d-block ms-2 my-3">
+	<div class="d-block mt-3">
+		<button @click="clickExportCsv" class="btn btn-sm btn-primary d-inline">CSV Export</button>
+	</div>
+</div>
 </template>
 
 <script>
@@ -28,6 +33,11 @@ export default {
 			let tState = this.$store.state.activeTournament || {};
 			return (tState.lifecycle === 'complete');
 		}
+	},
+	methods: {
+		clickExportCsv() {
+			this.$store.dispatch('downloadStandingsCsv');
+		},
 	},
 	components: { StandingsDisplay }
 }
