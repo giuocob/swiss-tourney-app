@@ -2,7 +2,7 @@ import { createObjectCsvStringifier } from 'csv-writer';
 import swiss from './swiss';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 
-async function downloadRoundCsv(tState, expandedPairings, roundNumber) {
+async function downloadRoundCsv(tState, expandedPairings, roundNumber, includeScores) {
 	let roundNumberStr = '' + ((roundNumber === 'currentRound') ? tState.currentRoundNumber : roundNumber);
 	let nameHeaders = [], winHeaders = []
 	for (let i = 0; i < tState.playersPerRound; i++) {
@@ -13,10 +13,11 @@ async function downloadRoundCsv(tState, expandedPairings, roundNumber) {
 	}
 	let headers = [
 		{ id: 'tableNumber', title: 'tableNumber' },
-		...nameHeaders,
-		...winHeaders,
-		{ id: 'draws', title: 'draws' }
+		...nameHeaders
 	];
+	if (includeScores) {
+		headers.push(...winHeaders, { id: 'draws', title: 'draws' });
+	}
 	let records = expandedPairings.map((pairing) => {
 		let record = {
 			tableNumber: pairing.tableNumber,
@@ -48,11 +49,12 @@ async function downloadRoundCsv(tState, expandedPairings, roundNumber) {
 
 async function downloadRoundPairingSlipsPdf(tState, expandedPairings, roundNumber) {
 	const SLIPS_PER_PAGE = 4;
-	const FONT_SIZE = 16;
+	const FONT_SIZE = 14;
 	const LINE_SPACING = FONT_SIZE * 1.2;
 	const X_MARGIN = 50;
 	const BLOCK_Y_MARGIN = 30;
 
+	let roundNumberStr = '' + ((roundNumber === 'currentRound') ? tState.currentRoundNumber : roundNumber);
 	let pdfDoc = await PDFDocument.create();
 	let pdfFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
 	let currentPage = pdfDoc.addPage();
@@ -69,12 +71,23 @@ async function downloadRoundPairingSlipsPdf(tState, expandedPairings, roundNumbe
 		let blockBottomMarker = height - (height * (currentPagePos + 1) / SLIPS_PER_PAGE);
 		let [ blockYStart, blockYEnd ] = [ blockTopMarker - BLOCK_Y_MARGIN, blockBottomMarker + BLOCK_Y_MARGIN ];
 		let currentBlockPos = 0;
-		for (let player of pairing.players) {
-			let playerName = player.name;
-			if (!swiss.isRealPlayerId(player.id)) {
-				playerName = `(${playerName})`;
-			}
-			currentPage.drawText(playerName, {
+		let lineTexts = [
+			`Round ${roundNumberStr}, Table ${pairing.tableNumber}`,
+			`(please circle winner)`,
+			' ',
+			...pairing.players.map((player) => {
+				let playerName = player.name;
+				if (!swiss.isRealPlayerId(player.id)) {
+					playerName = `(${playerName})`;
+				}
+				return playerName;
+			}),
+			' ',
+			'(Circle if draw)',
+			'_________________________________________________________________'
+		]
+		for (let text of lineTexts) {
+			currentPage.drawText(text, {
 				x: X_MARGIN,
 				y: blockYStart - currentBlockPos * LINE_SPACING,
 				size: FONT_SIZE,

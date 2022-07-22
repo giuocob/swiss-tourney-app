@@ -419,7 +419,7 @@ function vuexConfig(appContext) {
 			downloadRoundCsv: async function({ commit, state, getters }, { roundNumber }) {
 				let tState = state.activeTournament;
 				let expandedPairings = getters.expandedPairingsByRound(roundNumber);
-				await downloadRoundCsv(tState, expandedPairings, roundNumber);
+				await downloadRoundCsv(tState, expandedPairings, roundNumber, false);
 			}
 		},
 		getters: {
