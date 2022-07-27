@@ -6,6 +6,10 @@
 	</button>
 	<button @click="startNewTournament" class="btn btn-lg btn-primary d-block mx-auto my-5">Start New Tourney</button>
 	<button @click="deleteTournament" class="btn btn-lg btn-danger d-block mx-auto my-5" >Delete Active Tourney</button>
+	<button v-if="hasActiveTournament" @click="clickExportTournamentData"
+		class="btn btn-warning d-block mx-auto my-5">
+		Export Current Pairings
+	</button>
 </div>
 </template>
 
@@ -58,6 +62,9 @@ export default {
 		gotoCurrentTournamentLink() {
 			let tState = this.$store.state.activeTournament;
 			this.$router.push(currentTournamentLink(tState));
+		},
+		async clickExportTournamentData() {
+			await this.$store.dispatch('downloadAllRoundsCsv');
 		}
 	}
 };

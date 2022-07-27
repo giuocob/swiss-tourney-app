@@ -3,6 +3,7 @@ import swiss from './swiss';
 import {
 	downloadStandingsCsv,
 	downloadRoundCsv,
+	downloadAllRoundsCsv,
 	downloadRoundPairingSlipsPdf
 } from './file-export';
 
@@ -424,6 +425,10 @@ function vuexConfig(appContext) {
 				let tState = state.activeTournament;
 				let expandedPairings = getters.expandedPairingsByRound(roundNumber);
 				await downloadRoundCsv(tState, expandedPairings, roundNumber, false);
+			},
+			downloadAllRoundsCsv: async function({ commit, state, getters }) {
+				let tState = state.activeTournament;
+				await downloadAllRoundsCsv(tState, getters);
 			},
 			downloadStandingsCsv: async function({ commit, state, getters }) {
 				let tState = state.activeTournament;
